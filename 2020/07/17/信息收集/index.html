@@ -1,0 +1,736 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="AMao"><meta name="renderer" content="webkit"><meta name="copyright" content="AMao"><meta name="keywords" content="AMao's Blog"><meta name="description" content=""><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>Web渗透测试之信息收集详细指南 · AMao's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">AMao</div><div class="profile-signature">小菜鸡目前对一些东西的认知，希望师傅们可以帮忙纠正！</div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">AMao's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">Web渗透测试之信息收集详细指南</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2020-07-17</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="Web安全"> Web安全</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="Exploit"> Exploit</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="渗透测试"> 渗透测试</a></span></div><div class="post-intro-read"><span> Word count: <span class="post-count">6.2k</span> | Reading time: <span class="post-count">25</span>min</span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><h2 id="域名信息收集"><a href="#域名信息收集" class="headerlink" title="域名信息收集"></a>域名信息收集</h2><blockquote>
+<p>获取域名的注册信息，包括该域名的DNS服务器信息和注册人的联系信息等。</p>
+</blockquote>
+<h3 id="Whois"><a href="#Whois" class="headerlink" title="Whois"></a>Whois</h3><ul>
+<li><p><a href="http://whois.chinaz.com/Whois" target="_blank" rel="noopener">站长之家</a></p>
+</li>
+<li><p><a href="http://whois.aizhan.com/ip138" target="_blank" rel="noopener">爱站</a></p>
+</li>
+<li><p><a href="https://site.ip138.com/" target="_blank" rel="noopener">查询网</a></p>
+</li>
+<li><p><a href="http://whois.xinnet.com/" target="_blank" rel="noopener">新网</a></p>
+</li>
+<li><p><a href="https://whois.cloud.tencent.com/domain?domain=nicolasbouliane" target="_blank" rel="noopener">腾讯云</a></p>
+<p>小站点比较适合</p>
+</li>
+<li><p><a href="https://lookup.icann.org/" target="_blank" rel="noopener">lookup</a></p>
+<p>国外</p>
+</li>
+</ul>
+<h3 id="信用信息查询"><a href="#信用信息查询" class="headerlink" title="信用信息查询"></a>信用信息查询</h3><ul>
+<li><a href="http://www.gsxt.gov.cn/index.html" target="_blank" rel="noopener">国家信用信息公示系统</a></li>
+<li><a href="http://company.xizhi.com/" target="_blank" rel="noopener">悉知</a></li>
+</ul>
+<h3 id="企业信息及资产"><a href="#企业信息及资产" class="headerlink" title="企业信息及资产"></a>企业信息及资产</h3><blockquote>
+<p>获取目标企业的微信公众号、微博、备案站点、软件著作权等信息</p>
+</blockquote>
+<ul>
+<li><a href="https://www.tianyancha.com/" target="_blank" rel="noopener">天眼查</a></li>
+<li><a href="https://www.qichacha.com/" target="_blank" rel="noopener">企查查</a></li>
+</ul>
+<h3 id="APP"><a href="#APP" class="headerlink" title="APP"></a>APP</h3><blockquote>
+<p>通过当前APP查询同开发商应用，得到目标所有APP应用</p>
+</blockquote>
+<ul>
+<li><a href="qimai.cn">七麦</a></li>
+<li><a href="https://www.apple.com/ios/app-store/" target="_blank" rel="noopener">AppStore</a></li>
+</ul>
+<hr>
+<h2 id="子域名收集"><a href="#子域名收集" class="headerlink" title="子域名收集"></a>子域名收集</h2><blockquote>
+<p>DNS 常见记录类型：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt;A记录       IP地址记录,记录一个域名对应的IP地址</span><br><span class="line">&gt;AAAA记录    IPv6地址记录，记录一个域名对应的IPv6地址</span><br><span class="line">&gt;CNAME记录   别名记录，记录一个主机的别名</span><br><span class="line">&gt;MX记录      电子邮件交换记录，记录一个邮件域名对应的IP地址</span><br><span class="line">&gt;NS记录      域名服务器记录 ,记录该域名由哪台域名服务器解析</span><br><span class="line">&gt;PTR记录     反向记录，也即从IP地址到域名的一条记录</span><br><span class="line">&gt;TXT记录     记录域名的相关文本信息</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="泄露"><a href="#泄露" class="headerlink" title="泄露"></a>泄露</h3><ul>
+<li><p>robots.txt</p>
+</li>
+<li><p>corssdomain.xml</p>
+<p>跨站策略文件</p>
+</li>
+<li><p>流量分析</p>
+</li>
+<li><p>Github 泄露</p>
+</li>
+</ul>
+<h3 id="搜索引擎"><a href="#搜索引擎" class="headerlink" title="搜索引擎"></a>搜索引擎</h3><p>Google 、Bing</p>
+<p><code>site:*.wikimedia.org -www -store -jobs -uk</code></p>
+<h3 id="网络资产搜索引擎"><a href="#网络资产搜索引擎" class="headerlink" title="网络资产搜索引擎"></a>网络资产搜索引擎</h3><h4 id="Shodan"><a href="#Shodan" class="headerlink" title="Shodan"></a><a href="https://exploits.shodan.io/welcome" target="_blank" rel="noopener">Shodan</a></h4><h4 id="Zoomeye"><a href="#Zoomeye" class="headerlink" title="Zoomeye"></a><a href="https://www.zoomeye.org/" target="_blank" rel="noopener">Zoomeye</a></h4><h4 id="Fofa"><a href="#Fofa" class="headerlink" title="Fofa"></a><a href="https://fofa.so/" target="_blank" rel="noopener">Fofa</a></h4><p><code>domain=Your_domain</code></p>
+<h4 id="云溪"><a href="#云溪" class="headerlink" title="云溪"></a><a href="https://www.yunsee.cn/" target="_blank" rel="noopener">云溪</a></h4><h3 id="在线工具"><a href="#在线工具" class="headerlink" title="在线工具"></a>在线工具</h3><h4 id="查询网"><a href="#查询网" class="headerlink" title="查询网"></a><a href="https://site.ip138.com/" target="_blank" rel="noopener">查询网</a></h4><h4 id="DNSDB"><a href="#DNSDB" class="headerlink" title="DNSDB"></a><a href="https://www.dnsdb.io" target="_blank" rel="noopener">DNSDB</a></h4><h3 id="第三方-DNS-服务"><a href="#第三方-DNS-服务" class="headerlink" title="第三方 DNS 服务"></a>第三方 DNS 服务</h3><h4 id="VirusTotal"><a href="#VirusTotal" class="headerlink" title="VirusTotal"></a><a href="https://www.virustotal.com/gui/home/search" target="_blank" rel="noopener">VirusTotal</a></h4><blockquote>
+<p>VirusTotal会运行DNS复制功能，通过存储用户访问URL时执行的DNS解析来构建数据库。</p>
+<p>要检索子域名的信息，只需将域名放在搜索栏中即可</p>
+</blockquote>
+<h4 id="DNS-dumpster"><a href="#DNS-dumpster" class="headerlink" title="DNS dumpster"></a><a href="https://dnsdumpster.com/" target="_blank" rel="noopener">DNS dumpster</a></h4><h3 id="Sublist3r"><a href="#Sublist3r" class="headerlink" title="Sublist3r"></a>Sublist3r</h3><blockquote>
+<p>Sublist3r使用许多搜索引擎（如Google，Yahoo，Bing，Baidu和Ask）进行子域名探测。</p>
+<p>Sublist3r还使用Netcraft，Virustotal，ThreatCrowd，DNSdumpster和ReverseDNS进行子域名探测。</p>
+</blockquote>
+<ul>
+<li><p><a href="https://github.com/aboul3la/Sublist3r" target="_blank" rel="noopener">Download</a></p>
+</li>
+<li><p>使用</p>
+<p><code>-d your_domain</code></p>
+</li>
+</ul>
+<h3 id="证书透明"><a href="#证书透明" class="headerlink" title="证书透明"></a>证书透明</h3><blockquote>
+<p>证书透明（CT）是证书颁发机构（CA）必须将其发布的每个SSL/TLS证书发布到公共日志的项目。</p>
+<p>SSL/TLS证书通常包含域名，子域名和电子邮件地址</p>
+</blockquote>
+<p>获取子域名的方法</p>
+<ul>
+<li><p>证书中的「使用者可选名称」字段值</p>
+</li>
+<li><p>通过资产搜索引擎收集的证书信息</p>
+<ul>
+<li><p><a href="https://crt.sh/" target="_blank" rel="noopener">https://crt.sh/</a></p>
+<blockquote>
+<p>可以使用postgres客户端访问CT日志数据</p>
+<p><code>$ psql -h crt.sh -p 5432 -U guest certwatch</code></p>
+</blockquote>
+</li>
+<li><p><a href="https://censys.io/" target="_blank" rel="noopener">https://censys.io/</a></p>
+</li>
+<li><p><a href="https://developers.facebook.com/tools/ct/" target="_blank" rel="noopener">https://developers.facebook.com/tools/ct/</a></p>
+</li>
+<li><p><a href="https://google.com/transparencyreport/https/ct/" target="_blank" rel="noopener">https://google.com/transparencyreport/https/ct/</a></p>
+</li>
+</ul>
+<blockquote>
+<p>工具：</p>
+<ul>
+<li><p><a href="https://github.com/appsecco/the-art-of-subdomain-enumeration" target="_blank" rel="noopener">CT日志使用工具</a></p>
+</li>
+<li><p><a href="https://github.com/blechschmidt/massdns" target="_blank" rel="noopener">massdns</a></p>
+<p>命令：<code>./bin/massdns -r lists/resolvers.txt -t AAAA domains.txt &gt; results.txt</code></p>
+<ul>
+<li>domain.txt 为域名</li>
+</ul>
+</li>
+</ul>
+<p>TIPS：使用CT进行子域名探测的缺点是CT日志中找到的域名可能不存在，因此无法解析为IP地址，可以通过 <code>|</code> 把查询结果传给 massdns 进一步解析</p>
+</blockquote>
+</li>
+<li><p>向域名A记录IP的443端口发送请求，获取证书支持的域名和子域名</p>
+<blockquote>
+<p>A (Address) 记录是用来指定主机名（或域名）对应的IP地址记录。</p>
+<p>用户可以将该域名下的网站服务器指向到自己的web server上。</p>
+<p>同时也可以设置域名的子域名。</p>
+<p>通俗来说A记录就是服务器的IP，域名绑定A记录就是告诉DNS，当你输入域名的时候给你引导向设置在 DNS的A记录所对应的服务器</p>
+</blockquote>
+</li>
+</ul>
+<p>工具：</p>
+<h4 id="Findomain"><a href="#Findomain" class="headerlink" title="Findomain"></a>Findomain</h4><ul>
+<li><a href="https://github.com/Edu4rdSHL/findomain" target="_blank" rel="noopener">Download</a></li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">findomain-windows.exe -t baidu.com</span><br></pre></td></tr></table></figure>
+
+<h3 id="字典枚举"><a href="#字典枚举" class="headerlink" title="字典枚举"></a>字典枚举</h3><h4 id="御剑子域名挖掘器"><a href="#御剑子域名挖掘器" class="headerlink" title="御剑子域名挖掘器"></a>御剑子域名挖掘器</h4><h4 id="DNSRecon"><a href="#DNSRecon" class="headerlink" title="DNSRecon"></a>DNSRecon</h4><blockquote>
+<p>kali 自带</p>
+</blockquote>
+<h3 id="置换扫描"><a href="#置换扫描" class="headerlink" title="置换扫描"></a>置换扫描</h3><blockquote>
+<p>使用已知域/子域名的排列组合来识别新的子域名</p>
+</blockquote>
+<h4 id="altdns-python-altdns-py-i-icann-domains-o-data-output-w-icann-words-r-s-results-output-txt"><a href="#altdns-python-altdns-py-i-icann-domains-o-data-output-w-icann-words-r-s-results-output-txt" class="headerlink" title="[altdns]($ python altdns.py -i icann.domains -o data_output -w icann.words -r -s results_output.txt)"></a>[altdns]($ python altdns.py -i icann.domains -o data_output -w icann.words -r -s results_output.txt)</h4><p><code>$ python altdns.py -i icann.domains -o data_output -w icann.words -r -s results_output.txt</code></p>
+<h3 id="AS-号码查询"><a href="#AS-号码查询" class="headerlink" title="AS 号码查询"></a>AS 号码查询</h3><blockquote>
+<p>AS 号码帮助识别属于组织的网络块，而该网络快又可能具有有效域</p>
+</blockquote>
+<p>步骤：</p>
+<ul>
+<li><p>获取 AS Number</p>
+<ul>
+<li><p><a href="https://asn.cymru.com/cgi-bin/whois.cgi" target="_blank" rel="noopener">基于IP</a></p>
+<p>可以使用 <code>dig</code> 或 <code>host</code> 解析出IP（kali）</p>
+</li>
+<li><p><a href="https://bgp.he.net/" target="_blank" rel="noopener">基于域名</a></p>
+</li>
+</ul>
+</li>
+<li><p>使用nmap进行查找</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap --script targets-asn --script-args targets-asn.asn=Your_asn &gt; netblocks.txt</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h3 id="DNS-域传送漏洞"><a href="#DNS-域传送漏洞" class="headerlink" title="DNS 域传送漏洞"></a>DNS 域传送漏洞</h3><blockquote>
+<p>域传送是一种DNS事务，DNS服务器将其全部或部分域文件的副本传递给另一个DNS服务器。</p>
+<p>但是许多DNS服务器却被错误配置成只要收到AXFR请求，就向对方进行域传送。</p>
+<p>如果未安全地配置域传输送，则任何人都可以对指定名称的服务器启动域传送并获取域文件的副本。</p>
+<p>根据设计，域文件包含有关域和保存在域中的大量主机信息</p>
+</blockquote>
+<ul>
+<li><p>正确配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">allow-transfer &#123;ipaddress;&#125;; 通过ip限制可进行域传送的服务器</span><br><span class="line"></span><br><span class="line">allow-transfer &#123; key transfer; &#125;; 通过key限制可进行域传送的服务器</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h4 id="Windows-下对漏洞的利用"><a href="#Windows-下对漏洞的利用" class="headerlink" title="Windows 下对漏洞的利用"></a>Windows 下对漏洞的利用</h4><ul>
+<li><p>nslookup命令进入交互式shell</p>
+</li>
+<li><p>server命令 参数设定查询将要使用的DNS服务器</p>
+</li>
+<li><p>ls命令列出某个域中的所有域名</p>
+<blockquote>
+<p>漏洞存在则直接输出相关DNS信息</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="Linux：dig"><a href="#Linux：dig" class="headerlink" title="Linux：dig"></a>Linux：dig</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dig +multi AXFR @@1.1.1.1 your_domain</span><br></pre></td></tr></table></figure>
+
+<h4 id="Kali：dnswalk"><a href="#Kali：dnswalk" class="headerlink" title="Kali：dnswalk"></a>Kali：dnswalk</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dnswalk your_domain.</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>TIPS：这里需要域名的完整形式，即 <code>.</code> 不能省略</li>
+</ul>
+<h4 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nmap --script dns-zone-transfer --script-args dns-zone-trans</span><br><span class="line">fer.domain=Your_domain -p 53 -Pn dns30.hichina.com</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>TIPS：DNS域传送漏洞也是属于高危漏洞</li>
+</ul>
+<h3 id="DNSSEC"><a href="#DNSSEC" class="headerlink" title="DNSSEC"></a>DNSSEC</h3><blockquote>
+<p>由于DNSSEC处理不存在域名的方式，可以”遍历”DNSSEC域并枚举该域中的所有域名</p>
+<p><a href="https://www.menandmice.com/blog/bid-73645-Take-your-DNSSEC-with-a-grain-of-salt/" target="_blank" rel="noopener">more</a></p>
+</blockquote>
+<p>探测工具：</p>
+<h4 id="ldns-walk"><a href="#ldns-walk" class="headerlink" title="ldns-walk"></a>ldns-walk</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 安装</span><br><span class="line">apt-get install ldnsutils   </span><br><span class="line"></span><br><span class="line"># 使用</span><br><span class="line">ldns-walk target.com</span><br><span class="line">ldns-walk @nsserver.com target.com</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>一些DNSSEC域使用NSEC3做记录，该记录使用散列域名来防止攻击者收集纯文本域名。</p>
+<p>攻击者可以收集所有子域名hash值并将hash值离线破解。</p>
+</blockquote>
+<p>工具：</p>
+<blockquote>
+<p>自动收集NSEC3 HASH 并破解</p>
+</blockquote>
+<h4 id="nsec3walker"><a href="#nsec3walker" class="headerlink" title="nsec3walker"></a><a href="https://dnscurve.org/nsec3walker.html" target="_blank" rel="noopener">nsec3walker</a></h4><h4 id="nsec3map"><a href="#nsec3map" class="headerlink" title="nsec3map"></a><a href="https://github.com/anonion0/nsec3map" target="_blank" rel="noopener">nsec3map</a></h4><h3 id="公开域名库"><a href="#公开域名库" class="headerlink" title="公开域名库"></a>公开域名库</h3><h4 id="Forward-DNS"><a href="#Forward-DNS" class="headerlink" title="Forward DNS"></a>Forward DNS</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -silent https://scans.io/data/rapid7/sonar.fdns_v2/20170417-fdns.json.gz | pigz -dc | grep &quot;.icann.org&quot; | jq</span><br></pre></td></tr></table></figure>
+
+<h3 id="子域名变化监控"><a href="#子域名变化监控" class="headerlink" title="子域名变化监控"></a>子域名变化监控</h3><blockquote>
+<p>主要用于漏洞赏金</p>
+</blockquote>
+<h4 id="Sublert"><a href="#Sublert" class="headerlink" title="Sublert"></a><a href="https://www.freebuf.com/sectool/198396.html" target="_blank" rel="noopener">Sublert</a></h4><blockquote>
+<p>TIPS：</p>
+<p>直接使用DNS解析准确率会高些，因为有些业务还未上架，通过浏览器访问可能返回错误</p>
+</blockquote>
+<h3 id="综合收集工具"><a href="#综合收集工具" class="headerlink" title="综合收集工具"></a>综合收集工具</h3><h4 id="Oneforall"><a href="#Oneforall" class="headerlink" title="Oneforall"></a>Oneforall</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">→ docker pull shmilylty/oneforall</span><br><span class="line">→ docker run -it --rm -v /home/ubuntu/Desktop/Tools/Exploit/Web/Domain/oneforall:/OneForAll/results 20514c5f9fdf</span><br><span class="line"></span><br><span class="line">/OneForAll # python oneforall.py --target baidu.com run</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">--brute=BRUTE</span><br><span class="line">    使用爆破模块(默认False)</span><br><span class="line">--dns=DNS</span><br><span class="line">    DNS解析子域(默认True)</span><br><span class="line">--req=REQ</span><br><span class="line">    HTTP请求子域(默认True)</span><br><span class="line">--port=PORT</span><br><span class="line">    请求验证子域的端口范围(默认只探测80端口)</span><br><span class="line">--valid=VALID</span><br><span class="line">    只导出存活的子域结果(默认False)</span><br><span class="line">--format=FORMAT</span><br><span class="line">    结果保存格式(默认csv)</span><br><span class="line">--path=PATH</span><br><span class="line">    结果保存路径(默认None)</span><br><span class="line">--takeover=TAKEOVER</span><br><span class="line">    检查子域接管(默认False)</span><br></pre></td></tr></table></figure>
+
+
+
+<hr>
+<h2 id="真实-IP-收集"><a href="#真实-IP-收集" class="headerlink" title="真实 IP 收集"></a>真实 IP 收集</h2><blockquote>
+<p>如果挖掘的目标购买了CDN服务，可以直接ping目标的域名，但得到的并非真正的目标Web服务器，只是最近的一台目标节点的CDN服务器，这就导致了我们没法直接得到目标的真实IP段范围。</p>
+</blockquote>
+<h3 id="CDN"><a href="#CDN" class="headerlink" title="CDN"></a>CDN</h3><blockquote>
+<p>CDN的全称是Content Delivery Network，即内容分发网络。</p>
+<p>其基本思路是尽可能避开互联网上有可能影响数据传输速度和稳定性的瓶颈和环节，使内容传输的更快、更稳定。</p>
+<p>通过在网络各处放置节点服务器所构成的在现有的互联网基础之上的一层智能虚拟网络，CDN系统能够实时地根据网络流量和各节点的连接、负载状况以及到用户的距离和响应时间等综合信息将用户的请求重新导向离用户最近的服务节点上</p>
+</blockquote>
+<ul>
+<li><p>国内CDN</p>
+<blockquote>
+<p>阿里云<br>腾讯云<br>百度云<br>网宿科技(ChinanNet Center)<br>蓝汛<br>金山云<br>UCloud<br>网易云<br>世纪互联<br>七牛云<br>京东云</p>
+</blockquote>
+</li>
+<li><p>国外CDN</p>
+<blockquote>
+<p>Akamai(阿卡迈)<br>Limelight Networks(简称LLNW)<br>AWS Cloud(亚马逊)<br>Google(谷歌)<br>Comcast(康卡斯特)</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="判断是否存在CDN"><a href="#判断是否存在CDN" class="headerlink" title="判断是否存在CDN"></a>判断是否存在CDN</h3><blockquote>
+<p>小站点一般没有</p>
+</blockquote>
+<h4 id="ping"><a href="#ping" class="headerlink" title="ping"></a>ping</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 存在CDN</span><br><span class="line"></span><br><span class="line">&gt; ping www.jd.com</span><br><span class="line"></span><br><span class="line">正在 Ping img2x-sched.jcloud-cdn.com [27.36.120.3] 具有 32 字节的数据:</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 不存在CDN</span><br><span class="line"></span><br><span class="line">&gt;ping www.dfle.com.cn</span><br><span class="line"></span><br><span class="line">正在 Ping www.dfle.com.cn [218.107.207.39] 具有 32 字节的数据:</span><br></pre></td></tr></table></figure>
+
+<h4 id="nslookup"><a href="#nslookup" class="headerlink" title="nslookup"></a>nslookup</h4><h5 id="不同DNS服务器"><a href="#不同DNS服务器" class="headerlink" title="不同DNS服务器"></a>不同DNS服务器</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&gt;nslookup www.dfle.com.cn 8.8.8.8</span><br><span class="line">服务器:  dns.google</span><br><span class="line">Address:  8.8.8.8</span><br><span class="line"></span><br><span class="line">非权威应答:</span><br><span class="line">名称:    www.dfle.com.cn</span><br><span class="line">Address:  218.107.207.39</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&gt;nslookup www.dfle.com.cn 114.114.114.114</span><br><span class="line">服务器:  public1.114dns.com</span><br><span class="line">Address:  114.114.114.114</span><br><span class="line"></span><br><span class="line">非权威应答:</span><br><span class="line">名称:    www.dfle.com.cn</span><br><span class="line">Address:  218.107.207.39</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果解析结果不一致，则存在CDN</p>
+<p>这里尝试了几个CDN的站，解析结果都一致，存在一定的误判</p>
+</blockquote>
+<h5 id="默认解析"><a href="#默认解析" class="headerlink" title="默认解析"></a>默认解析</h5><blockquote>
+<p>如果解析出多个结果，则可能存在CDN</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt;nslookup www.baidu.com</span><br><span class="line">服务器:  phicomm.me</span><br><span class="line">Address:  192.168.2.1</span><br><span class="line"></span><br><span class="line">非权威应答:</span><br><span class="line">名称:    www.a.shifen.com</span><br><span class="line">Addresses:  163.177.151.110</span><br><span class="line">          163.177.151.109</span><br><span class="line">Aliases:  www.baidu.com</span><br></pre></td></tr></table></figure>
+
+<h4 id="多地ping"><a href="#多地ping" class="headerlink" title="多地ping"></a>多地ping</h4><blockquote>
+<p>如果IP大多不太一样或者规律性很强，可以尝试查询这些IP的归属地，判断是否存在CDN</p>
+</blockquote>
+<ul>
+<li><p><a href="http://ping.chinaz.com/" target="_blank" rel="noopener">站长</a></p>
+</li>
+<li><p><a href="https://www.17ce.com/" target="_blank" rel="noopener">17ce</a></p>
+</li>
+<li><p><a href="https://tools.ipip.net/newping.php" target="_blank" rel="noopener">IPIP</a></p>
+<p>支持国外</p>
+</li>
+</ul>
+<h3 id="CDN绕过"><a href="#CDN绕过" class="headerlink" title="CDN绕过"></a>CDN绕过</h3><h4 id="内部邮箱源"><a href="#内部邮箱源" class="headerlink" title="内部邮箱源"></a>内部邮箱源</h4><blockquote>
+<p>一般的邮件系统都在内部，没有经过CDN的解析，通过利用目标网站的邮箱注册、找回密码或者RSS订阅等功能，查看邮件、寻找邮件头中的邮件服务器域名IP，ping这个邮件服务器的域名，就可以获得目标的真实IP。</p>
+</blockquote>
+<ul>
+<li>TIPS：区分第三方公共邮件服务器</li>
+</ul>
+<h4 id="国外请求"><a href="#国外请求" class="headerlink" title="国外请求"></a>国外请求</h4><p>很多时候国内的CDN对国外得覆盖面并不是很广，故此可以利用此特点进行探测。通过国外代理访问就能查看真实IP了，或者通过国外的DNS解析，可能就能得到真实的IP。</p>
+<ul>
+<li><a href="https://asm.ca.com/en/ping.php" target="_blank" rel="noopener">ca</a></li>
+<li><a href="https://tools.ipip.net/newping.php" target="_blank" rel="noopener">IPIP</a></li>
+</ul>
+<h4 id="国外DNS服务器"><a href="#国外DNS服务器" class="headerlink" title="国外DNS服务器"></a>国外DNS服务器</h4><p><a href="http://www.ab173.com/dns/dns_world.php" target="_blank" rel="noopener">世界DNS服务器地址</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&gt; nslookup www.jd.com 8.8.4.4</span><br><span class="line">服务器:  g1-dns-gdmz-yz</span><br><span class="line">Address:  8.8.4.4</span><br><span class="line"></span><br><span class="line">非权威应答:</span><br><span class="line">名称:    img2x-sched.jcloud-cdn.com</span><br><span class="line">Address:  27.36.120.3</span><br><span class="line">Aliases:  www.jd.com</span><br><span class="line">          www.jd.com.gslb.qianxun.com</span><br><span class="line">          www.jdcdn.com</span><br><span class="line">          img20.360buyimg.com.s.galileo.jcloud-cdn.com</span><br></pre></td></tr></table></figure>
+
+<h4 id="APP应用"><a href="#APP应用" class="headerlink" title="APP应用"></a>APP应用</h4><blockquote>
+<p>分析APP流量获取到真实IP</p>
+</blockquote>
+<h4 id="在线查询"><a href="#在线查询" class="headerlink" title="在线查询"></a>在线查询</h4><ul>
+<li><a href="https://www.dnsdb.io" target="_blank" rel="noopener">dnsdb</a></li>
+<li><a href="https://sitereport.netcraft.com/?url=" target="_blank" rel="noopener">NETCRAFT</a></li>
+<li><a href="https://viewdns.info" target="_blank" rel="noopener">viewdns</a></li>
+<li><a href="https://x.threatbook.cn/" target="_blank" rel="noopener">threatbook</a></li>
+<li><a href="https://securitytrails.com/" target="_blank" rel="noopener">securitytrails</a></li>
+</ul>
+<h4 id="分站域名-子域名-amp-C段查询"><a href="#分站域名-子域名-amp-C段查询" class="headerlink" title="分站域名(子域名) &amp; C段查询"></a>分站域名(子域名) &amp; C段查询</h4><blockquote>
+<p>很多网站主站的访问量会比较大，所以主站都是挂CDN的，但是分站可能没有挂CDN，可以通过ping二级域名获取分站IP， 可能会出现分站和主站不是同一个IP但在同一个C段下面的情况，从而能判断出目标的真实IP段。</p>
+</blockquote>
+<p>C段查询：</p>
+<h5 id="在线查询-1"><a href="#在线查询-1" class="headerlink" title="在线查询"></a>在线查询</h5><ul>
+<li><a href="https://www.webscan.cc/" target="_blank" rel="noopener">webscan</a></li>
+</ul>
+<h5 id="工具"><a href="#工具" class="headerlink" title="工具"></a>工具</h5><ul>
+<li>K8_C段旁注工具6.0</li>
+<li>nmap</li>
+<li>IISPutScaner</li>
+<li>小米范Web查找器</li>
+</ul>
+<h5 id="网络资产搜索引擎-1"><a href="#网络资产搜索引擎-1" class="headerlink" title="网络资产搜索引擎"></a>网络资产搜索引擎</h5><blockquote>
+<p>Shodan、Fofa、zoomeye</p>
+</blockquote>
+<ul>
+<li><p>使用C段搜索语法</p>
+<p><code>ip=&quot;120.1.1.1/24&quot;</code></p>
+</li>
+</ul>
+<h4 id="信息泄露"><a href="#信息泄露" class="headerlink" title="信息泄露"></a>信息泄露</h4><ul>
+<li>配置文件<ul>
+<li>phpinfo</li>
+</ul>
+</li>
+<li>测试文件</li>
+<li>GitHub泄露</li>
+</ul>
+<h4 id="SSRF"><a href="#SSRF" class="headerlink" title="SSRF"></a>SSRF</h4><blockquote>
+<p>让目标服务器发起请求，连接VPS，通过端口监听可以查看到真实IP</p>
+</blockquote>
+<hr>
+<h2 id="端口信息"><a href="#端口信息" class="headerlink" title="端口信息"></a>端口信息</h2><h3 id="常见端口及渗透思路"><a href="#常见端口及渗透思路" class="headerlink" title="常见端口及渗透思路"></a>常见端口及渗透思路</h3><blockquote>
+<p>端口：21 服务：FTP/TFTP/VSFTPD 总结：爆破/嗅探/溢出/后门<br>端口：22 服务：ssh远程连接      总结：爆破/openssh漏洞<br>端口：23 服务：Telnet远程连接   总结：爆破/嗅探/弱口令<br>端口：25 服务：SMTP邮件服务     总结：邮件伪造<br>端口：53 服务：DNS域名解析系统   总结：域传送/劫持/缓存投毒/欺骗<br>端口：67/68 服务：dhcp服务      总结：劫持/欺骗<br>端口：110 服务：pop3        总结：爆破/嗅探<br>端口：139 服务：Samba服务     总结：爆破/未授权访问/远程命令执行<br>端口：143 服务：Imap协议     总结：爆破161SNMP协议爆破/搜集目标内网信息<br>端口：389 服务：Ldap目录访问协议 总结：注入/未授权访问/弱口令<br>端口：445 服务：smb        总结：ms17-010/端口溢出<br>端口：512/513/514 服务：Linux Rexec服务 总结：爆破/Rlogin登陆<br>端口：873 服务：Rsync服务         总结：文件上传/未授权访问<br>端口：1080 服务：socket          总结：爆破<br>端口：1352 服务：Lotus domino邮件服务   总结：爆破/信息泄漏<br>端口：1433 服务：mssql          总结：爆破/注入/SA弱口令<br>端口：1521 服务：oracle       总结：爆破/注入/TNS爆破/反弹shell2049Nfs服务配置不当<br>端口：2181 服务：zookeeper服务        总结：未授权访问<br>端口：2375 服务：docker remote api    总结：未授权访问<br>端口：3306 服务：mysql         总结：爆破/注入<br>端口：3389 服务：Rdp远程桌面链接        总结：爆破/shift后门<br>端口：4848 服务：GlassFish控制台       总结：爆破/认证绕过<br>端口：5000 服务：sybase/DB2数据库    总结：爆破/注入/提权<br>端口：5432 服务：postgresql         总结：爆破/注入/缓冲区溢出<br>端口：5632 服务：pcanywhere服务      总结：抓密码/代码执行<br>端口：5900 服务：vnc           总结：爆破/认证绕过<br>端口：6379 服务：Redis数据库         总结：未授权访问/爆破<br>端口：7001/7002 服务：weblogic     总结：java反序列化/控制台弱口令<br>端口：80/443 服务：http/https     总结：web应用漏洞/心脏滴血<br>端口：8069 服务：zabbix服务        总结：远程命令执行/注入<br>端口：8161 服务：activemq       总结：弱口令/写文件<br>端口：8080/8089 服务：Jboss/Tomcat/Resin 总结：爆破/PUT文件上传/反序列化<br>端口：8083/8086 服务：influxDB     总结：未授权访问<br>端口：9000 服务：fastcgi         总结：远程命令执行<br>端口：9090 服务：Websphere       总结：控制台爆破/java反序列化/弱口令<br>端口：9200/9300 服务：elasticsearch   总结：远程代码执行<br>端口：11211 服务：memcached       总结：未授权访问<br>端口：27017/27018 服务：mongodb     总结：未授权访问/爆破</p>
+</blockquote>
+<h3 id="扫描工具"><a href="#扫描工具" class="headerlink" title="扫描工具"></a>扫描工具</h3><h4 id="nmap-1"><a href="#nmap-1" class="headerlink" title="nmap"></a>nmap</h4><ul>
+<li><p>绕过FirewallD</p>
+<blockquote>
+<p>通过不同的协议(TCP半连接、TCP全连接、ICMP、UDP等)的扫描绕过Firewalld的限制</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">nmap -sP 192.33.6.128</span><br><span class="line">nmap -sT 192.33.6.128</span><br><span class="line">nmap -sS 192.33.6.128</span><br><span class="line">nmap -sU 192.33.6.128</span><br><span class="line">nmap -sF 192.33.6.128</span><br><span class="line">nmap -sX 192.33.6.128</span><br><span class="line">nmap -sN 192.33.6.128</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>多IP扫描</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># 扫描整个子网 </span><br><span class="line">nmap 192.168.6.1/24 </span><br><span class="line">nmap 192.168.1-30.1-254</span><br><span class="line"></span><br><span class="line"># 扫描一个小范围 </span><br><span class="line">nmap 192.168.6.2-10</span><br><span class="line"></span><br><span class="line"># 扫描txt内的ip列表  </span><br><span class="line">nmap -iL text.txt</span><br><span class="line"></span><br><span class="line"># 扫描除某个目标外   </span><br><span class="line">nmap 192.168.6.1/24 -exclude 192.168.6.25</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>收集端口信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -T4 -A -v -Pn 192.168.1.1/24 -p 21,22,23,25,80,81,82,83,88,110,143,443,445,512,513,514,1433,1521,2082,2083,2181,2601,2604,3128,3306,3389,3690,4848,5432,5900,5984,6379,7001,7002,8069,8080,8081,8086,8088,9200,9300,11211,10000,27017,27018,50000,50030,50070 -oN nmap_result.txt</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>扫描端口并标记可爆破服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap 127.0.0.1 --script=ftp-brute,imap-brute,smtp-brute,pop3-brute,mongodb-brute,redis-brute,ms-sql-brute,rlogin-brute,rsync-brute,mysql-brute,pgsql-brute,oracle-sid-brute,oracle-brute,rtsp-url-brute,snmp-brute,svn-brute,telnet-brute,vnc-brute,xmpp-brute</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>判断常见的漏洞并扫描端口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap 127.0.0.1 --script=auth,vuln</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>精确判断漏洞并扫描端口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap 127.0.0.1 --script=dns-zone-transfer,ftp-anon,ftp-proftpd-backdoor,ftp-vsftpd-backdoor,ftp-vuln-cve2010-4221,http-backup-finder,http-cisco-anyconnect,http-iis-short-name-brute,http-put,http-php-version,http-shellshock,http-robots.txt,http-svn-enum,http-webdav-scan,iis-buffer-overflow,iax2-version,memcached-info,mongodb-info,msrpc-enum,ms-sql-info,mysql-info,nrpe-enum,pptp-version,redis-info,rpcinfo,samba-vuln-cve-2012-1182,smb-vuln-ms08-067,smb-vuln-ms17-010,snmp-info,sshv1,xmpp-info,tftp-enum,teamspeak2-version</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h4 id="Masscan"><a href="#Masscan" class="headerlink" title="Masscan"></a>Masscan</h4><h4 id="Zmap"><a href="#Zmap" class="headerlink" title="Zmap"></a>Zmap</h4><h4 id="御剑高速TCP端口扫描"><a href="#御剑高速TCP端口扫描" class="headerlink" title="御剑高速TCP端口扫描"></a>御剑高速TCP端口扫描</h4><h4 id="Masnmapscan"><a href="#Masnmapscan" class="headerlink" title="Masnmapscan"></a>Masnmapscan</h4><blockquote>
+<p>masnmapscan整合了masscan和nmap两款扫描器，masscan扫描端口，nmap扫描端口对应服务，二者结合起来实现了又快又好地扫描。并且加入了针对目标资产有防火墙的应对措施。</p>
+</blockquote>
+<h3 id="网络空间搜索引擎"><a href="#网络空间搜索引擎" class="headerlink" title="网络空间搜索引擎"></a>网络空间搜索引擎</h3><blockquote>
+<p>Shodan、Fofa、Zoomeye</p>
+</blockquote>
+<hr>
+<h2 id="指纹识别"><a href="#指纹识别" class="headerlink" title="指纹识别"></a>指纹识别</h2><blockquote>
+<p>在漏洞挖掘中，对目标服务器进行指纹识别是相当有必要的，因为只有识别出相应的Web容器或者CMS，才能查找与其相关的漏洞，然后才能进行相应的渗透操作。</p>
+<p>指纹识别：Web应用、服务器、操作系统等等</p>
+</blockquote>
+<h3 id="在线平台"><a href="#在线平台" class="headerlink" title="在线平台"></a>在线平台</h3><ul>
+<li><p><a href="http://www.yunsee.cn/" target="_blank" rel="noopener">云悉</a></p>
+</li>
+<li><p><a href="http://finger.tidesec.net/" target="_blank" rel="noopener">TideFinger</a></p>
+</li>
+<li><p><a href="http://whatweb.bugscaner.com/look/" target="_blank" rel="noopener">BugScaner</a></p>
+</li>
+<li><p><a href="https://fp.shuziguanxing.com/#/" target="_blank" rel="noopener">数字观星</a></p>
+</li>
+</ul>
+<h3 id="工具-1"><a href="#工具-1" class="headerlink" title="工具"></a>工具</h3><ul>
+<li>御剑Web指纹识别</li>
+<li>WhatWeb</li>
+<li>Test404轻量CMS指纹识别+v2.1</li>
+<li>椰树</li>
+</ul>
+<h3 id="CMS-识别"><a href="#CMS-识别" class="headerlink" title="CMS 识别"></a>CMS 识别</h3><ul>
+<li><p><a href="https://github.com/Tuhinshubhra/CMSeeK" target="_blank" rel="noopener">CMSeeK</a></p>
+</li>
+<li><p><a href="https://github.com/Dionach/CMSmap" target="_blank" rel="noopener">CMSmap</a></p>
+</li>
+<li><p><a href="https://github.com/aedoo/ACMSDiscovery" target="_blank" rel="noopener">ACMSDiscovery</a></p>
+</li>
+<li><p><a href="https://github.com/TideSec/TideFinger" target="_blank" rel="noopener">TideFinger</a></p>
+</li>
+<li><p><a href="https://github.com/Lucifer1993/AngelSword" target="_blank" rel="noopener">AngelSword</a></p>
+</li>
+</ul>
+<hr>
+<h2 id="目录（后台）"><a href="#目录（后台）" class="headerlink" title="目录（后台）"></a>目录（后台）</h2><ul>
+<li><a href="https://github.com/7kbstorm/7kbscan-WebPathBrute" target="_blank" rel="noopener">7kbscan-WebPathBrute</a></li>
+<li><a href="https://github.com/H4ckForJob/dirmap" target="_blank" rel="noopener">DirMap</a></li>
+<li><a href="https://github.com/maurosoria/dirsearch" target="_blank" rel="noopener">dirsearch</a></li>
+<li>Test404轻量后台扫描器+v2.0</li>
+<li>御剑</li>
+</ul>
+<p>基于Fuzz：</p>
+<ul>
+<li><a href="https://github.com/OJ/gobuster" target="_blank" rel="noopener">gobuster</a></li>
+<li>dirbuster OWASP (kali自带)</li>
+<li><a href="https://github.com/xmendez/wfuzz" target="_blank" rel="noopener">wfuzz</a></li>
+</ul>
+<hr>
+<h2 id="泄露-1"><a href="#泄露-1" class="headerlink" title="泄露"></a>泄露</h2><h3 id="敏感信息"><a href="#敏感信息" class="headerlink" title="敏感信息"></a>敏感信息</h3><ul>
+<li>攻击者通过构造特殊URL地址，触发系统web应用程序报错，在回显内容中，获取网站敏感信息；</li>
+<li>攻击者利用泄漏的敏感信息，获取网站服务器web路径，为进一步攻击提供帮助。</li>
+</ul>
+<h3 id="robots-txt-利用"><a href="#robots-txt-利用" class="headerlink" title="robots.txt 利用"></a>robots.txt 利用</h3><h3 id="hg-源码泄露"><a href="#hg-源码泄露" class="headerlink" title=".hg 源码泄露"></a><code>.hg</code> 源码泄露</h3><ul>
+<li><p>漏洞成因</p>
+<p>hg init的时候会生成 <code>.hg</code></p>
+</li>
+<li><p>工具</p>
+<p><code>dvcs-ripper</code></p>
+<ul>
+<li>eg. <code>rip-hg.pl -v -u http://www.am0s.com/.hg/</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="git-源码泄露"><a href="#git-源码泄露" class="headerlink" title=".git 源码泄露"></a><code>.git</code> 源码泄露</h3><ul>
+<li><p>漏洞成因</p>
+<p>在运行git init初始化代码库的时候，会在当前目录下面产生一个.git的隐藏文件，用来记录代码的变更记录等等。</p>
+<p>在发布代码的时候，把.git这个目录没有删除，直接发布了。</p>
+<p>使用这个文件，可以用来恢复源代码。</p>
+</li>
+<li><p>工具</p>
+<p><code>GitHack</code></p>
+</li>
+<li><p><a href="https://ring0.me/2015/05/recover-code-from-corrupt-git-repo/" target="_blank" rel="noopener">从受损的 <code>git</code> 仓库里恢复文件</a></p>
+<p><code>printf &quot;\x1f\x8b\x08\x00\x00\x00\x00\x00&quot; | cat - .git/objects/filename | gunzip</code></p>
+<ul>
+<li><p><a href="https://www.kernel.org/pub/software/scm/git/docs/user-manual.html#object-details" target="_blank" rel="noopener">Git Object 格式</a> 告诉我们，git object 是把文件内容做了 deflate 压缩后存储的。我们知道 gzip 也是用的 zlib 的 deflate 压缩，不过 gz 文件有特殊的头尾。与其写一段代码调用 gzip 库，不如把 gzip 的文件头给补上，直接调用 gunzip 来解压。（浏览器返回的 HTTP 请求经常也是 deflate 压缩啊，从抓包记录里解压这个是必备技能啊）</p>
+</li>
+<li><p><code>\x1f\x8b\x08\x00\x00\x00\x00\x00</code> 这串字符是res</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">import gzip</span><br><span class="line">ret = gzip.decompress(res).decode(&quot;utf-8&quot;)</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="DS-Store-文件泄漏"><a href="#DS-Store-文件泄漏" class="headerlink" title=".DS_Store 文件泄漏"></a><code>.DS_Store</code> 文件泄漏</h3><ul>
+<li><p>漏洞成因</p>
+<p>在发布代码时未删除文件夹中隐藏的.DS_store，被发现后，获取了敏感的文件名等信息。</p>
+</li>
+<li><p><code>http://www.xxxxx.com/.ds_store</code></p>
+</li>
+<li><p>工具</p>
+<p>dsstoreexp</p>
+<ul>
+<li><p>使用</p>
+<p><code>python ds_store_exp.py http://www.xxxx.com/.DS_Store</code></p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="SVN"><a href="#SVN" class="headerlink" title="SVN"></a>SVN</h3><ul>
+<li><p>概述</p>
+<p>Subversion，简称SVN，是一个开放源代码的版本控制系统，相对于的RCS、CVS，采用了分支管理系统，它的设计目标就是取代CVS。</p>
+<p>互联网上越来越多的控制服务从CVS转移到 Subversion。</p>
+<p>Subversion使用服务端—客户端的结构，当然服务端与客户端可以都运行在同一台服务器上。在服务端是存放着所有受控制数据的Subversion仓库，另一端是Subversion的客户端程序，管理着受控数据的一部分在本地的映射（称为“工作副本”）。</p>
+<p>在这两端之间，是通过各种仓库存取层（Repository Access，简称RA）的多条通道进行访问的。这些通道中，可以通过不同的网络协议，例如HTTP、SSH等，或本地文件的方式来对仓库进行操作。</p>
+</li>
+<li><p>工具</p>
+<ul>
+<li><p>dvcs-ripper</p>
+<ul>
+<li><code>rip-svn.pl -v -u http://www.xxx.com/.svn/</code></li>
+</ul>
+</li>
+<li><p>Seay-Svn</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="WEB-INF-web-xml-泄露"><a href="#WEB-INF-web-xml-泄露" class="headerlink" title="WEB-INF/web.xml 泄露"></a>WEB-INF/web.xml 泄露</h3><ul>
+<li><p>概述</p>
+<p>WEB-INF是 <code>Java</code> 的WEB应用的安全目录。如果想在页面中直接访问其中的文件，必须通过web.xml文件对要访问的文件进行相应映射才能访问</p>
+</li>
+<li><p>主要文件/目录</p>
+<ul>
+<li><p><code>/WEB-INF/web.xml</code></p>
+<p>Web应用程序配置文件，描述了 servlet 和其他的应用组件配置及命名规则。</p>
+</li>
+<li><p><code>/WEB-INF/classes/</code></p>
+<p>含了站点所有用的 class 文件，包括 servlet class 和非servlet class，他们不能包含在 .jar文件中</p>
+</li>
+<li><p><code>/WEB-INF/lib/</code></p>
+<p>存放web应用需要的各种JAR文件，放置仅在这个应用中要求使用的jar文件,如数据库驱动jar文件</p>
+</li>
+<li><p><code>/WEB-INF/src/</code></p>
+<p>源码目录，按照包名结构放置各个 java 文件</p>
+</li>
+<li><p><code>/WEB-INF/database.properties</code></p>
+<p>数据库配置文件</p>
+</li>
+</ul>
+</li>
+<li><p>漏洞成因</p>
+<p>通常一些web应用我们会使用多个web服务器搭配使用，解决其中的一个web服务器的性能缺陷以及做均衡负载的优点和完成一些分层结构的安全策略等。</p>
+<p>在使用这种架构的时候，由于对静态资源的目录或文件的映射配置不当，可能会引发一些的安全问题，导致web.xml等文件能够被读取</p>
+</li>
+<li><p>漏洞检测以及利用</p>
+<p>通过找到 <code>web.xml</code> 文件，推断 class 文件的路径，最后直接获取 class文件，在通过反编译 class文件，得到网站源码。</p>
+<p>一般情况，jsp 引擎默认都是禁止访问 <code>WEB-INF</code> 目录的，Nginx 配合Tomcat做均衡负载或集群等情况时，问题原因其实很简单，Nginx不会去考虑配置其他类型引擎（Nginx不是jsp引擎）导致的安全问题而引入到自身的安全规范中来（这样耦合性太高了），修改Nginx配置文件禁止访问 <code>WEB-INF</code>目录就可以修补：</p>
+<p><code>location ~ ^/WEB-INF/* { deny all; }</code></p>
+<p>或者 <code>return 404;</code></p>
+</li>
+</ul>
+<h3 id="CVS泄漏"><a href="#CVS泄漏" class="headerlink" title="CVS泄漏"></a>CVS泄漏</h3><ul>
+<li><p>漏洞利用测试的目录</p>
+<ul>
+<li><p><code>http://www.xxx.com/CVS/Root</code> </p>
+<p>返回根信息</p>
+</li>
+<li><p><code>http://www.xxxx.com/CVS/Entries</code></p>
+<p>返回所有文件的结构</p>
+</li>
+</ul>
+</li>
+<li><p>取回源码的命令</p>
+<p><code>bk clone http://www.xxx.com/name dir</code></p>
+<p>把远端一个名为 name 的 repo clone到本地名为dir的目录下。</p>
+<p>查看所有的改变的命令，转到download的目录</p>
+<p><code>bk changes</code></p>
+</li>
+<li><p>工具</p>
+<ul>
+<li><p>dvcs-ripper</p>
+<p><code>rip-bzr.pl -v -u http://www.xxxx.com/.bzr/</code></p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="备份文件"><a href="#备份文件" class="headerlink" title="备份文件"></a>备份文件</h3><ul>
+<li>漏洞成因<ul>
+<li>服务器管理员错误地将网站或者网页的备份文件放置到服务器web目录下</li>
+<li>编辑器在使用过程中自动保存的备份文件或者临时文件因为各种原因没有被删除而保存在web目录下</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">.rar</span><br><span class="line">.zip</span><br><span class="line">.7z</span><br><span class="line">.tar.gz</span><br><span class="line">.tar</span><br><span class="line">.bak</span><br><span class="line">.bak.</span><br><span class="line">.swp</span><br><span class="line">.swo</span><br><span class="line">.backup</span><br><span class="line">.txt</span><br><span class="line">.html</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">index.php~</span><br><span class="line">index.phps</span><br><span class="line">www.zip</span><br><span class="line">sql.bak</span><br><span class="line">wwwroot</span><br><span class="line">database</span><br><span class="line">test</span><br><span class="line">user</span><br><span class="line">admin</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>词典</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line">/_index.html</span><br><span class="line">/a.zip</span><br><span class="line">/web.zip</span><br><span class="line">/web.rar</span><br><span class="line">/1.rar</span><br><span class="line">/bbs.rar</span><br><span class="line">/www.root.rar</span><br><span class="line">/123.rar</span><br><span class="line">/data.rar</span><br><span class="line">/bak.rar</span><br><span class="line">/oa.rar</span><br><span class="line">/admin.rar</span><br><span class="line">/www.rar</span><br><span class="line">/2014.rar</span><br><span class="line">/2015.rar</span><br><span class="line">/2016.rar</span><br><span class="line">/2014.zip</span><br><span class="line">/2015.zip</span><br><span class="line">/2016.zip</span><br><span class="line">/2017.zip</span><br><span class="line">/1.zip</span><br><span class="line">/1.gz</span><br><span class="line">/1.tar.gz</span><br><span class="line">/2.zip</span><br><span class="line">/2.rar</span><br><span class="line">/123.rar</span><br><span class="line">/123.zip</span><br><span class="line">/a.rar</span><br><span class="line">/a.zip</span><br><span class="line">/admin.rar</span><br><span class="line">/back.rar</span><br><span class="line">/backup.rar</span><br><span class="line">/bak.rar</span><br><span class="line">/bbs.rar</span><br><span class="line">/bbs.zip</span><br><span class="line">/beifen.rar</span><br><span class="line">/beifen.zip</span><br><span class="line">/beian.rar</span><br><span class="line">/data.rar</span><br><span class="line">/data.zip</span><br><span class="line">/db.rar</span><br><span class="line">/db.zip</span><br><span class="line">/flashfxp.rar</span><br><span class="line">/flashfxp.zip</span><br><span class="line">/fdsa.rar</span><br><span class="line">/ftp.rar</span><br><span class="line">/gg.rar</span><br><span class="line">/hdocs.rar</span><br><span class="line">/hdocs.zip</span><br><span class="line">/HYTop.mdb</span><br><span class="line">/root.rar</span><br><span class="line">/Release.rar</span><br><span class="line">/Release.zip</span><br><span class="line">/sql.rar</span><br><span class="line">/test.rar</span><br><span class="line">/template.rar</span><br><span class="line">/template.zip</span><br><span class="line">/upfile.rar</span><br><span class="line">/vip.rar</span><br><span class="line">/wangzhan.rar</span><br><span class="line">/wangzhan.zip</span><br><span class="line">/web.rar</span><br><span class="line">/web.zip</span><br><span class="line">/website.rar</span><br><span class="line">/www.rar</span><br><span class="line">/www.zip</span><br><span class="line">/wwwroot.rar</span><br><span class="line">/wwwroot.zip</span><br><span class="line">/wz.rar</span><br><span class="line">/index.php.swp</span><br><span class="line">/index.php.bak</span><br><span class="line">/index.php.swo</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h4 id="工具-2"><a href="#工具-2" class="headerlink" title="工具"></a>工具</h4><ul>
+<li>Test404网站备份文件扫描器 v2.0 （Windows）</li>
+<li>ihoneyBakFileScan</li>
+</ul>
+<h3 id="第三方平台泄露"><a href="#第三方平台泄露" class="headerlink" title="第三方平台泄露"></a>第三方平台泄露</h3><h4 id="代码托管平台"><a href="#代码托管平台" class="headerlink" title="代码托管平台"></a>代码托管平台</h4><h5 id="Github"><a href="#Github" class="headerlink" title="Github"></a><a href="https://github.com/" target="_blank" rel="noopener">Github</a></h5><blockquote>
+<p>通过搜索网站域名、网站JS路径、网站备案、网站下的技术支持等进行敏感信息查询</p>
+</blockquote>
+<p><a href="https://sec.xiaomi.com/article/37" target="_blank" rel="noopener">开发Github泄露扫描</a></p>
+<h5 id="gitee"><a href="#gitee" class="headerlink" title="gitee"></a><a href="https://gitee.com/" target="_blank" rel="noopener">gitee</a></h5><h4 id="公网网盘"><a href="#公网网盘" class="headerlink" title="公网网盘"></a>公网网盘</h4><blockquote>
+<p>一般直接搜索厂商名</p>
+</blockquote>
+<h5 id="凌风云搜索"><a href="#凌风云搜索" class="headerlink" title="凌风云搜索"></a><a href="https://www.lingfengyun.com/" target="_blank" rel="noopener">凌风云搜索</a></h5><h4 id="公开文件"><a href="#公开文件" class="headerlink" title="公开文件"></a>公开文件</h4><h5 id="Google-Hacking"><a href="#Google-Hacking" class="headerlink" title="Google Hacking"></a>Google Hacking</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com filetype:.doc | .docx | .xls | .xlsx | .ppt | .pptx | .odt | .pdf | .rtf | .sxw | .psw | .csv</span><br></pre></td></tr></table></figure>
+
+<h5 id="snitch"><a href="#snitch" class="headerlink" title="snitch"></a>snitch</h5><blockquote>
+<p>Snitch可以针对指定域自动执行信息收集过程。此工具可帮助收集可通过Web搜索引擎找到的指定信息。</p>
+</blockquote>
+<ul>
+<li><p><a href="https://github.com/Smaash/snitch" target="_blank" rel="noopener">Download</a></p>
+</li>
+<li><p>使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python snitch.py -C &quot;site:whitehouse.gov filetype:pdf&quot; -P 100</span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+<hr>
+<h2 id="Google-Hacking-1"><a href="#Google-Hacking-1" class="headerlink" title="Google Hacking"></a>Google Hacking</h2><h3 id="后台地址"><a href="#后台地址" class="headerlink" title="后台地址"></a>后台地址</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">site:target.com intext:管理 | 后台 | 后台管理 | 登陆 | 登录 | 用户名 | 密码 | 系统 | 账号 | login | system</span><br><span class="line"></span><br><span class="line">site:target.com inurl:login | inurl:admin | inurl:manage | inurl:manager | inurl:admin_login | inurl:system | inurl:backend</span><br><span class="line"></span><br><span class="line">site:target.com intitle:管理 | 后台 | 后台管理 | 登陆 | 登录</span><br></pre></td></tr></table></figure>
+
+<h3 id="上传点"><a href="#上传点" class="headerlink" title="上传点"></a>上传点</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">site:target.com inurl:file</span><br><span class="line"></span><br><span class="line">site:target.com inurl:upload</span><br></pre></td></tr></table></figure>
+
+<h3 id="注入点"><a href="#注入点" class="headerlink" title="注入点"></a>注入点</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com inurl:php?id=</span><br></pre></td></tr></table></figure>
+
+<h3 id="SQL-报错"><a href="#SQL-报错" class="headerlink" title="SQL 报错"></a>SQL 报错</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com intext:&quot;sql syntax near&quot; | intext:&quot;syntax error has occurred&quot; | intext:&quot;incorrect syntax near&quot; | intext:&quot;unexpected end of SQL command&quot; | intext:&quot;Warning: mysql_connect()&quot; | intext:”Warning: mysql_query()&quot; | intext:”Warning: pg_connect()&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="编辑器"><a href="#编辑器" class="headerlink" title="编辑器"></a>编辑器</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com inurl:ewebeditor</span><br></pre></td></tr></table></figure>
+
+<h3 id="目录遍历"><a href="#目录遍历" class="headerlink" title="目录遍历"></a>目录遍历</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com intitle:index.of</span><br></pre></td></tr></table></figure>
+
+<h3 id="phpinfo"><a href="#phpinfo" class="headerlink" title="phpinfo"></a>phpinfo</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com ext:php intitle:phpinfo &quot;published by the PHP Group&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com ext:.xml | .conf | .cnf | .reg | .inf | .rdp | .cfg | .txt | .ora | .ini</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据库文件"><a href="#数据库文件" class="headerlink" title="数据库文件"></a>数据库文件</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com ext:.sql | .dbf | .mdb | .db</span><br></pre></td></tr></table></figure>
+
+<h3 id="日志文件"><a href="#日志文件" class="headerlink" title="日志文件"></a>日志文件</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com ext:.log</span><br></pre></td></tr></table></figure>
+
+<h3 id="备份-历史文件"><a href="#备份-历史文件" class="headerlink" title="备份/历史文件"></a>备份/历史文件</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com ext:.bkf | .bkp | .old | .backup | .bak | .swp | .rar | .txt | .zip | .7z | .sql | .tar.gz | .tgz | .tar</span><br></pre></td></tr></table></figure>
+
+<h3 id="公开文件泄露"><a href="#公开文件泄露" class="headerlink" title="公开文件泄露"></a>公开文件泄露</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com filetype:.doc | .docx | .xls | .xlsx | .ppt | .pptx | .odt | .pdf | .rtf | .sxw | .psw | .csv</span><br></pre></td></tr></table></figure>
+
+<h3 id="邮箱信息"><a href="#邮箱信息" class="headerlink" title="邮箱信息"></a>邮箱信息</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">site:target.com intext:@target.com</span><br><span class="line">site:target.com 邮件</span><br><span class="line">site:target.com email</span><br></pre></td></tr></table></figure>
+
+<p>自动化工具：</p>
+<h4 id="Infoga"><a href="#Infoga" class="headerlink" title="Infoga"></a>Infoga</h4><h3 id="社工信息"><a href="#社工信息" class="headerlink" title="社工信息"></a>社工信息</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">site:target.com intitle:账号 | 密码 | 工号 | 学号 | 身份证</span><br></pre></td></tr></table></figure>
+
+
+
+<hr>
+<h2 id="JS获取敏感接口"><a href="#JS获取敏感接口" class="headerlink" title="JS获取敏感接口"></a>JS获取敏感接口</h2><h3 id="JSFinder"><a href="#JSFinder" class="headerlink" title="JSFinder"></a><a href="https://github.com/Threezh1/JSFinder" target="_blank" rel="noopener">JSFinder</a></h3><h3 id="LinkFinder"><a href="#LinkFinder" class="headerlink" title="LinkFinder"></a><a href="https://github.com/GerbenJavado/LinkFinder" target="_blank" rel="noopener">LinkFinder</a></h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># 基础用法</span><br><span class="line">python linkfinder.py -i https://example.com/1.js -o results.html</span><br><span class="line"></span><br><span class="line"># CLI输出（不使用jsbeautifier，这使得它非常快）</span><br><span class="line">pyhon linkfinder.py -i https://example.com/1.js -o cli</span><br><span class="line"></span><br><span class="line"># 分析整个域的JS文件</span><br><span class="line">python linkfinder.py -i https://example.com -d</span><br><span class="line"></span><br><span class="line"># Burp输入（在目标中选择要保存的文件，右键单击，Save selected items将该文件作为输入）</span><br><span class="line">python linkfinder.py -i burpfile -b</span><br><span class="line"></span><br><span class="line"># 枚举JavaScript文件的整个文件夹，同时查找以/ api /开头的终结点，并最终将结果保存到results.html</span><br><span class="line">python linkfinder.py -i &apos;Desktop/*.js&apos; -r ^/api/ -o results.html</span><br></pre></td></tr></table></figure>
+
+
+
+<hr>
+<h2 id="历史漏洞"><a href="#历史漏洞" class="headerlink" title="历史漏洞"></a>历史漏洞</h2><ul>
+<li><a href="https://github.com/hanc00l/wooyun_public" target="_blank" rel="noopener">乌云</a></li>
+<li><a href="https://www.exploit-db.com/" target="_blank" rel="noopener">Exploit-db</a></li>
+<li><a href="https://www.securityfocus.com/bid" target="_blank" rel="noopener">Securityfocus</a></li>
+<li><a href="https://cxsecurity.com/exploit/" target="_blank" rel="noopener">Cxsecurity</a></li>
+<li><a href="http://www.cnnvd.org.cn/" target="_blank" rel="noopener">国家信息安全漏洞库</a></li>
+<li><a href="https://www.seebug.org/" target="_blank" rel="noopener">Seebug</a></li>
+</ul>
+<hr>
+<h2 id="WAF-识别"><a href="#WAF-识别" class="headerlink" title="WAF 识别"></a>WAF 识别</h2><ul>
+<li>wafw00f （kali）</li>
+</ul>
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/103683868" target="_blank" rel="noopener">Link1</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/103774755" target="_blank" rel="noopener">Link2</a></p>
+<p><a href="https://xz.aliyun.com/t/6617" target="_blank" rel="noopener">Link3</a></p>
+<p>Link4(<a href="https://xz.aliyun.com/t/3478" target="_blank" rel="noopener">https://xz.aliyun.com/t/3478</a>)</p>
+<hr>
+<h2 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h2><blockquote>
+<ol>
+<li>博主初衷为分享网络安全知识，请勿利用技术做出任何危害网络安全的行为，否则后果自负，与本人无关！</li>
+<li>部分学习内容来自网络，回馈网络，如涉及版权问题，请联系删除  orz </li>
+</ol>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="https://passenger-amao.github.io">AMao</a></p><p> <span>Link:  </span><a href="https://passenger-amao.github.io/2020/07/17/%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/">https://passenger-amao.github.io/2020/07/17/%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/</a></p><p> <span>Copyright:  </span><span>本站所有文章均采用 <a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际(CC BY-NC-SA 4.0)</a> 许可协议。转载请注明出处！</span></p></div><div class="post-paginator"><a class="nextSlogan" href="/2020/07/17/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" title="PHP反序列化详解"><span>NextPost ></span><br><span class="nextTitle">PHP反序列化详解</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo" target="_blank" rel="noopener"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#域名信息收集"><span class="toc-number">1.</span> <span class="toc-text">域名信息收集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Whois"><span class="toc-number">1.1.</span> <span class="toc-text">Whois</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#信用信息查询"><span class="toc-number">1.2.</span> <span class="toc-text">信用信息查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#企业信息及资产"><span class="toc-number">1.3.</span> <span class="toc-text">企业信息及资产</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#APP"><span class="toc-number">1.4.</span> <span class="toc-text">APP</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#子域名收集"><span class="toc-number">2.</span> <span class="toc-text">子域名收集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#泄露"><span class="toc-number">2.1.</span> <span class="toc-text">泄露</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#搜索引擎"><span class="toc-number">2.2.</span> <span class="toc-text">搜索引擎</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#网络资产搜索引擎"><span class="toc-number">2.3.</span> <span class="toc-text">网络资产搜索引擎</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Shodan"><span class="toc-number">2.3.1.</span> <span class="toc-text">Shodan</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Zoomeye"><span class="toc-number">2.3.2.</span> <span class="toc-text">Zoomeye</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Fofa"><span class="toc-number">2.3.3.</span> <span class="toc-text">Fofa</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#云溪"><span class="toc-number">2.3.4.</span> <span class="toc-text">云溪</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在线工具"><span class="toc-number">2.4.</span> <span class="toc-text">在线工具</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#查询网"><span class="toc-number">2.4.1.</span> <span class="toc-text">查询网</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#DNSDB"><span class="toc-number">2.4.2.</span> <span class="toc-text">DNSDB</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#第三方-DNS-服务"><span class="toc-number">2.5.</span> <span class="toc-text">第三方 DNS 服务</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#VirusTotal"><span class="toc-number">2.5.1.</span> <span class="toc-text">VirusTotal</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#DNS-dumpster"><span class="toc-number">2.5.2.</span> <span class="toc-text">DNS dumpster</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Sublist3r"><span class="toc-number">2.6.</span> <span class="toc-text">Sublist3r</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#证书透明"><span class="toc-number">2.7.</span> <span class="toc-text">证书透明</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Findomain"><span class="toc-number">2.7.1.</span> <span class="toc-text">Findomain</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#字典枚举"><span class="toc-number">2.8.</span> <span class="toc-text">字典枚举</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#御剑子域名挖掘器"><span class="toc-number">2.8.1.</span> <span class="toc-text">御剑子域名挖掘器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#DNSRecon"><span class="toc-number">2.8.2.</span> <span class="toc-text">DNSRecon</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#置换扫描"><span class="toc-number">2.9.</span> <span class="toc-text">置换扫描</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#altdns-python-altdns-py-i-icann-domains-o-data-output-w-icann-words-r-s-results-output-txt"><span class="toc-number">2.9.1.</span> <span class="toc-text">[altdns]($ python altdns.py -i icann.domains -o data_output -w icann.words -r -s results_output.txt)</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AS-号码查询"><span class="toc-number">2.10.</span> <span class="toc-text">AS 号码查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DNS-域传送漏洞"><span class="toc-number">2.11.</span> <span class="toc-text">DNS 域传送漏洞</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Windows-下对漏洞的利用"><span class="toc-number">2.11.1.</span> <span class="toc-text">Windows 下对漏洞的利用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Linux：dig"><span class="toc-number">2.11.2.</span> <span class="toc-text">Linux：dig</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Kali：dnswalk"><span class="toc-number">2.11.3.</span> <span class="toc-text">Kali：dnswalk</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#nmap"><span class="toc-number">2.11.4.</span> <span class="toc-text">nmap</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DNSSEC"><span class="toc-number">2.12.</span> <span class="toc-text">DNSSEC</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#ldns-walk"><span class="toc-number">2.12.1.</span> <span class="toc-text">ldns-walk</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#nsec3walker"><span class="toc-number">2.12.2.</span> <span class="toc-text">nsec3walker</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#nsec3map"><span class="toc-number">2.12.3.</span> <span class="toc-text">nsec3map</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#公开域名库"><span class="toc-number">2.13.</span> <span class="toc-text">公开域名库</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Forward-DNS"><span class="toc-number">2.13.1.</span> <span class="toc-text">Forward DNS</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#子域名变化监控"><span class="toc-number">2.14.</span> <span class="toc-text">子域名变化监控</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Sublert"><span class="toc-number">2.14.1.</span> <span class="toc-text">Sublert</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#综合收集工具"><span class="toc-number">2.15.</span> <span class="toc-text">综合收集工具</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Oneforall"><span class="toc-number">2.15.1.</span> <span class="toc-text">Oneforall</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#真实-IP-收集"><span class="toc-number">3.</span> <span class="toc-text">真实 IP 收集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CDN"><span class="toc-number">3.1.</span> <span class="toc-text">CDN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#判断是否存在CDN"><span class="toc-number">3.2.</span> <span class="toc-text">判断是否存在CDN</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#ping"><span class="toc-number">3.2.1.</span> <span class="toc-text">ping</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#nslookup"><span class="toc-number">3.2.2.</span> <span class="toc-text">nslookup</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#不同DNS服务器"><span class="toc-number">3.2.2.1.</span> <span class="toc-text">不同DNS服务器</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#默认解析"><span class="toc-number">3.2.2.2.</span> <span class="toc-text">默认解析</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#多地ping"><span class="toc-number">3.2.3.</span> <span class="toc-text">多地ping</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CDN绕过"><span class="toc-number">3.3.</span> <span class="toc-text">CDN绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#内部邮箱源"><span class="toc-number">3.3.1.</span> <span class="toc-text">内部邮箱源</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#国外请求"><span class="toc-number">3.3.2.</span> <span class="toc-text">国外请求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#国外DNS服务器"><span class="toc-number">3.3.3.</span> <span class="toc-text">国外DNS服务器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#APP应用"><span class="toc-number">3.3.4.</span> <span class="toc-text">APP应用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#在线查询"><span class="toc-number">3.3.5.</span> <span class="toc-text">在线查询</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#分站域名-子域名-amp-C段查询"><span class="toc-number">3.3.6.</span> <span class="toc-text">分站域名(子域名) &amp; C段查询</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#在线查询-1"><span class="toc-number">3.3.6.1.</span> <span class="toc-text">在线查询</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#工具"><span class="toc-number">3.3.6.2.</span> <span class="toc-text">工具</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#网络资产搜索引擎-1"><span class="toc-number">3.3.6.3.</span> <span class="toc-text">网络资产搜索引擎</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#信息泄露"><span class="toc-number">3.3.7.</span> <span class="toc-text">信息泄露</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SSRF"><span class="toc-number">3.3.8.</span> <span class="toc-text">SSRF</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#端口信息"><span class="toc-number">4.</span> <span class="toc-text">端口信息</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#常见端口及渗透思路"><span class="toc-number">4.1.</span> <span class="toc-text">常见端口及渗透思路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#扫描工具"><span class="toc-number">4.2.</span> <span class="toc-text">扫描工具</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#nmap-1"><span class="toc-number">4.2.1.</span> <span class="toc-text">nmap</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Masscan"><span class="toc-number">4.2.2.</span> <span class="toc-text">Masscan</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Zmap"><span class="toc-number">4.2.3.</span> <span class="toc-text">Zmap</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#御剑高速TCP端口扫描"><span class="toc-number">4.2.4.</span> <span class="toc-text">御剑高速TCP端口扫描</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Masnmapscan"><span class="toc-number">4.2.5.</span> <span class="toc-text">Masnmapscan</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#网络空间搜索引擎"><span class="toc-number">4.3.</span> <span class="toc-text">网络空间搜索引擎</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#指纹识别"><span class="toc-number">5.</span> <span class="toc-text">指纹识别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#在线平台"><span class="toc-number">5.1.</span> <span class="toc-text">在线平台</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#工具-1"><span class="toc-number">5.2.</span> <span class="toc-text">工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CMS-识别"><span class="toc-number">5.3.</span> <span class="toc-text">CMS 识别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#目录（后台）"><span class="toc-number">6.</span> <span class="toc-text">目录（后台）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#泄露-1"><span class="toc-number">7.</span> <span class="toc-text">泄露</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#敏感信息"><span class="toc-number">7.1.</span> <span class="toc-text">敏感信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#robots-txt-利用"><span class="toc-number">7.2.</span> <span class="toc-text">robots.txt 利用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#hg-源码泄露"><span class="toc-number">7.3.</span> <span class="toc-text">.hg 源码泄露</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#git-源码泄露"><span class="toc-number">7.4.</span> <span class="toc-text">.git 源码泄露</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DS-Store-文件泄漏"><span class="toc-number">7.5.</span> <span class="toc-text">.DS_Store 文件泄漏</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SVN"><span class="toc-number">7.6.</span> <span class="toc-text">SVN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WEB-INF-web-xml-泄露"><span class="toc-number">7.7.</span> <span class="toc-text">WEB-INF/web.xml 泄露</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CVS泄漏"><span class="toc-number">7.8.</span> <span class="toc-text">CVS泄漏</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#备份文件"><span class="toc-number">7.9.</span> <span class="toc-text">备份文件</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#工具-2"><span class="toc-number">7.9.1.</span> <span class="toc-text">工具</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#第三方平台泄露"><span class="toc-number">7.10.</span> <span class="toc-text">第三方平台泄露</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#代码托管平台"><span class="toc-number">7.10.1.</span> <span class="toc-text">代码托管平台</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Github"><span class="toc-number">7.10.1.1.</span> <span class="toc-text">Github</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#gitee"><span class="toc-number">7.10.1.2.</span> <span class="toc-text">gitee</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#公网网盘"><span class="toc-number">7.10.2.</span> <span class="toc-text">公网网盘</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#凌风云搜索"><span class="toc-number">7.10.2.1.</span> <span class="toc-text">凌风云搜索</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#公开文件"><span class="toc-number">7.10.3.</span> <span class="toc-text">公开文件</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Google-Hacking"><span class="toc-number">7.10.3.1.</span> <span class="toc-text">Google Hacking</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#snitch"><span class="toc-number">7.10.3.2.</span> <span class="toc-text">snitch</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Google-Hacking-1"><span class="toc-number">8.</span> <span class="toc-text">Google Hacking</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#后台地址"><span class="toc-number">8.1.</span> <span class="toc-text">后台地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#上传点"><span class="toc-number">8.2.</span> <span class="toc-text">上传点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#注入点"><span class="toc-number">8.3.</span> <span class="toc-text">注入点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SQL-报错"><span class="toc-number">8.4.</span> <span class="toc-text">SQL 报错</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#编辑器"><span class="toc-number">8.5.</span> <span class="toc-text">编辑器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#目录遍历"><span class="toc-number">8.6.</span> <span class="toc-text">目录遍历</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#phpinfo"><span class="toc-number">8.7.</span> <span class="toc-text">phpinfo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#配置文件"><span class="toc-number">8.8.</span> <span class="toc-text">配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据库文件"><span class="toc-number">8.9.</span> <span class="toc-text">数据库文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#日志文件"><span class="toc-number">8.10.</span> <span class="toc-text">日志文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#备份-历史文件"><span class="toc-number">8.11.</span> <span class="toc-text">备份/历史文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#公开文件泄露"><span class="toc-number">8.12.</span> <span class="toc-text">公开文件泄露</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#邮箱信息"><span class="toc-number">8.13.</span> <span class="toc-text">邮箱信息</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Infoga"><span class="toc-number">8.13.1.</span> <span class="toc-text">Infoga</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#社工信息"><span class="toc-number">8.14.</span> <span class="toc-text">社工信息</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JS获取敏感接口"><span class="toc-number">9.</span> <span class="toc-text">JS获取敏感接口</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#JSFinder"><span class="toc-number">9.1.</span> <span class="toc-text">JSFinder</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LinkFinder"><span class="toc-number">9.2.</span> <span class="toc-text">LinkFinder</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#历史漏洞"><span class="toc-number">10.</span> <span class="toc-text">历史漏洞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#WAF-识别"><span class="toc-number">11.</span> <span class="toc-text">WAF 识别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-number">12.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#声明"><span class="toc-number">13.</span> <span class="toc-text">声明</span></a></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i></body></html>
