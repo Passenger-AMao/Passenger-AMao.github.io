@@ -1,0 +1,1536 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="AMao"><meta name="renderer" content="webkit"><meta name="copyright" content="AMao"><meta name="keywords" content="AMao's Blog"><meta name="description" content=""><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>Linux 快速入门 · AMao's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">AMao</div><div class="profile-signature">小菜鸡目前对一些东西的认知，希望师傅们可以帮忙纠正！</div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">AMao's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">Linux 快速入门</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2020-08-09</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="内网安全"> 内网安全</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="内网渗透"> 内网渗透</a></span></div><div class="post-intro-read"><span> Word count: <span class="post-count">20.5k</span> | Reading time: <span class="post-count">74</span>min</span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><h1 id="内网安全基础"><a href="#内网安全基础" class="headerlink" title="内网安全基础"></a>内网安全基础</h1><blockquote>
+<p>内网也指局域网（Local Area Network，LAN），是指在某一区域内由多台计算机互联而成的计算机组，组网范围通常在几千米以内。</p>
+<p>局域网可以实现文件管理、应用软件共享、打印机共享、 工作组内的历程安排、电子邮件和传真通信服务等功能。 </p>
+<p>内网是封闭的，它可以由办公室内的两台计算机组成，也可以由一个公司内的上千台计算机组成。银行、学校、企业工厂、政府机关、网吧、单位办公网等，都属于内网。</p>
+</blockquote>
+<h2 id="网络环境"><a href="#网络环境" class="headerlink" title="网络环境"></a>网络环境</h2><h3 id="工作组"><a href="#工作组" class="headerlink" title="工作组"></a>工作组</h3><blockquote>
+<p>工作组（Work Group）是局域网中的一个概念。它是最常见最简单最普通的资源管理模式，就是将不同的电脑按功能分别列入不同的组中，以方便管理。</p>
+</blockquote>
+<ul>
+<li><p>加入工作组</p>
+<p>右击桌面上的“计算机”图标，在弹出的快捷菜单出选择“属性”选项，然后单击“更改设置”和“更改”选项，在“计算机名”一栏中输入名称，在“工作组”一栏中输入想要加入的工作组的名称，重启</p>
+<ul>
+<li><p>TIPS：</p>
+<p>如果输入的工作组名称在网络中不存在，相当于新建了一个工作组</p>
+</li>
+</ul>
+</li>
+<li><p>局限性</p>
+<ul>
+<li><p>工作组没有真正的集中管理作用，工作组里的所有计算机都是对等的（也就是没有服务器和客户机之分的）</p>
+</li>
+<li><p>任意主机可以访问所有的共享资源，也可以加入同一网络中的任何工作组</p>
+</li>
+<li><p>用户没有统一管理</p>
+<blockquote>
+<p>应用场景：</p>
+<p>一个公司有200台计算机，希望某台计算机上的账户 Alan 可以访问每台计算机内的资源或者可以在每台计算机上登录，那么在工作组环境中，必须要 在这 200 台计算机的每一个 SAM 数据库中创建 Alan 这个账户。一旦发生修改操作，也需要在所有计算机上进行修改</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="域"><a href="#域" class="headerlink" title="域"></a>域</h3><blockquote>
+<p>域（Domain）是一个有安全边界的计算机集合</p>
+<p>安全边界：在两个域中，一个域中的用户无法访问另一个域中的资源</p>
+<p>要想访问域内的资源，用户必须通过合法的身份登录域，而用户对该域内的资源拥有什么样的权限，还取决于他在该域内的身份。</p>
+</blockquote>
+<h3 id="域控制器-DC"><a href="#域控制器-DC" class="headerlink" title="域控制器 DC"></a>域控制器 DC</h3><blockquote>
+<p>域控制器( Domain controller，DC) 是活动目录的存储位置，安装了活动目录的计算机称为域控制器。</p>
+<p>域控制器包含由这个域的账户、密码、属于这个域的计算机等信息构成的数据库</p>
+</blockquote>
+<ul>
+<li><p>功能</p>
+<p>域控制器负责每一台联入的计算机和用户的验证工作</p>
+<blockquote>
+<p>当计算机联入时，域控制器首先要鉴别这台计算机是否是属于这个域的，以及用户使用的登录账号是否存 在、密码是否正确。</p>
+<p>如果以上信息有一项不正确，那么域控制器就会拒绝这个用户从这台计算机登录。不能登录，用户就不能访问服务器中的相应资源</p>
+</blockquote>
+</li>
+</ul>
+<p>渗透域的最终目的是获取域控的系统权限，进而获取域内所有用户的账号和密码（散列值）。</p>
+<h3 id="域环境"><a href="#域环境" class="headerlink" title="域环境"></a>域环境</h3><h4 id="单域"><a href="#单域" class="headerlink" title="单域"></a>单域</h4><ul>
+<li><p>应用场景</p>
+<p>具有固定地理位置的小公司</p>
+</li>
+<li><p>组成</p>
+<p>一般在一个域内要建 立至少两个域服务器，一台域控制器（DC）和一台备份域控制器（BDC）</p>
+</li>
+</ul>
+<h4 id="父域-子域"><a href="#父域-子域" class="headerlink" title="父域  子域"></a>父域  子域</h4><ul>
+<li><p>应用场景</p>
+<p>一个大公司的不同分公司位于不同的地理位置</p>
+</li>
+<li><p>优点</p>
+<ul>
+<li><p>节省带宽</p>
+<p>因为在同一个域内，信息交互的条目是很多的， 而且不压缩；而在域和域之间，信息交互的条目相对较少，而且可以压缩</p>
+<blockquote>
+<p>如果把不同地理位置的分公司放在同一个域内，那么它们之间信息交互（包括同步、复制等）所花费的时间就会比较长，占用的带宽也会比较大</p>
+</blockquote>
+</li>
+<li><p>安全策略</p>
+<p>每个域都有自己独有的安全策略</p>
+<blockquote>
+<p>一个公司的财务部门希望能使用特定的安全策略（包括账号密码策略等），那么可以将财务部门作为一个子域来单独管理</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>组成</p>
+<p>在网络中划分多个域。第一个域称为父域，各分部的域称为该域的子域</p>
+</li>
+</ul>
+<h4 id="域树"><a href="#域树" class="headerlink" title="域树"></a>域树</h4><blockquote>
+<p>域树（Tree）指若干个域通过建立信任关系而组成的集合</p>
+<p>一个域管理员只能管理本域的内部，不能访问或者管理其他域，两个域之间相互访问则需要建立信任关系（Trust Relation）</p>
+</blockquote>
+<ul>
+<li><p>功能</p>
+<p>域树内的父域与子域之间不但可以按照需要相互进行管理，还可以跨网分配文件和打印机等设备资源，从而在不同的域之间实现网络资源的共享与管理、通信和数据传输</p>
+</li>
+<li><p>组成</p>
+<ul>
+<li>在一个域树中，父域可以包含很多个子域。</li>
+<li>子域是相对父域来说的，是指域名中的每一个段。 </li>
+<li>各子域之间用点号隔开，一个 <code>.</code> 代表一个层次。</li>
+<li>放在域名最后的子域称为最高级子域或一级域，在它前面的子域称为二级域</li>
+</ul>
+<p><img src="../Pictures/%E5%86%85%E7%BD%91%E5%9F%BA%E7%A1%801.png" alt=""></p>
+</li>
+</ul>
+<h4 id="域森林"><a href="#域森林" class="headerlink" title="域森林"></a>域森林</h4><blockquote>
+<p>域森林（Forest）是指若干个域树通过建立信任关系组成的集合</p>
+<p>可以通过域树之间建立的信任关系来管理和使用整个森林中的资源，从而又保持了原有域自身原有的特性。</p>
+</blockquote>
+<ul>
+<li><p>应用场景</p>
+<blockquote>
+<p>在一个公司兼并场景中，该公司使用域树 abc.com，被兼并公司本来有自己的域树 abc.net（或者在需要为被兼并公司 建立具有自己特色的域树时），因为域树 abc.net 无法挂在域树 abc.com 下，则域树 abc.com 与域 树 abc.net 之间需要通过建立信任关系来构成域森林</p>
+</blockquote>
+<p><img src="..%5CPictures%5C%E5%86%85%E7%BD%91%E5%9F%BA%E7%A1%804.png" alt="内网基础4"></p>
+</li>
+</ul>
+<h3 id="域名服务器"><a href="#域名服务器" class="headerlink" title="域名服务器"></a>域名服务器</h3><blockquote>
+<p>DNS域名服务器（Domain Name Server）是进行域名(domain name)和与之相对应的IP地址 (IP address)转换的服务器</p>
+<p>域中的计算机是使用DNS 来定位域控制器、服务器及其他计 算机、网络服务等的，所以域的名字就是 DNS 域的名字</p>
+</blockquote>
+<p>TIPS：</p>
+<ul>
+<li>一般在进行内网渗透时就是通过寻找 DNS 服务器来定位域控制器</li>
+<li>DNS 服务器和域控制器通常会处在同一台机器上</li>
+</ul>
+<h3 id="活动目录"><a href="#活动目录" class="headerlink" title="活动目录"></a>活动目录</h3><blockquote>
+<ul>
+<li><p>目录是存储有关网络对象（如用户、组、计算机、共享资源、打印机和联系人等）的信息</p>
+</li>
+<li><p>目录服务是指帮助用户快速、准确地从目录中找到其所需要的信息的服务</p>
+</li>
+<li><p>活动目录（Active Directory，AD）是指域环境中提供目录服务的组件</p>
+<p>活动目录存储的是网络中所有资源的快捷方式，用户通过寻找快捷方式来 定位资源。</p>
+<p>活动目录是微软提供的统一管理基础平台，ISA、Exchang、SMS 等服务都依赖这个基础平台</p>
+</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>Active Directory，活动⽬录简称AD，是⼀个基于DNS并以树状的数据结构来组成⽹络服务存储了有关⽹络对象的 信息，并以此作为基础对⽬录信息进⾏合乎逻辑的分层组织，让管理员和⽤户能够轻松地查找和使⽤这些信息</p>
+</blockquote>
+<ul>
+<li><p>组织框架</p>
+<p>逻辑结构</p>
+<blockquote>
+<p>在活动目录中，管理员可以完全忽略被管理对象的具体地理位置，而将这些对象按照一定的<br>方式放置在不同的容器中</p>
+<p>由于这种组织对象的做法不考虑被管理对象的具体地理位置，这种组 织框架称为逻辑结构。</p>
+</blockquote>
+</li>
+<li><p>活动目录的逻辑结构</p>
+<p>组织单元（OU）、域、域树、域森林</p>
+<blockquote>
+<p>域树内的所有域共享一个活动目录，这个活动目录内的数据分散地存储在各个域内，且每个域只存储该域内的数据</p>
+<p>通常网域（域名）都只有⼀个，在中型或⼤型的⽹络中，网域可能会有很多个，或是和其他公司或组织的AD相互链接</p>
+<p>活动目录这种层次结构，可以使企业网络具有极强的可扩展性，便 于组织、管理及目录定位。</p>
+</blockquote>
+</li>
+<li><p>功能</p>
+<ul>
+<li><p>账号集中管理</p>
+<p>所有账号均存储在服务器上，以便对账号进行重置命令/重置密码等。 </p>
+</li>
+<li><p>软件集中管理</p>
+<p>统一推送软件、安装网络打印机等。利用软件发布策略分发软件，可以让 用户自由选择要安装的软件。</p>
+</li>
+<li><p>环境集中管理</p>
+<p>统一客户端桌面、IE、TCP/IP 协议等的设置。</p>
+</li>
+<li><p>增强安全性</p>
+<p>统一部署杀毒软件和扫毒任务、集中管理用户的计算机权限、统一制订用户 密码策略等。</p>
+<p>可以监控网络，对资料进行统一管理。</p>
+</li>
+<li><p>更可靠，更短的宕机时间</p>
+<p>如：利用活动目录控制用户访问权限，利用群集、负载均衡等技术对文件服务器进行容灾设定。更可靠，宕机时间更短</p>
+</li>
+</ul>
+</li>
+<li><p>存储方式</p>
+<p>ntds.dit是AD中的数据库⽂件，它被保存在域控制器 <code>c:\windows\system32\ntds\NTDS.DIT</code> 位置。</p>
+<p>活动⽬录的数据库⽂件（ntds.dit）包含有关活动⽬录域中所有对象的所有信息，其中包含所有域⽤户和计算机帐户的密码哈希值。</p>
+<p>该⽂件在所有域控制器之间⾃动同步，它只能被域管理员访问和修改</p>
+</li>
+</ul>
+<h4 id="攻击活动目录"><a href="#攻击活动目录" class="headerlink" title="攻击活动目录"></a>攻击活动目录</h4><ul>
+<li>利⽤常规Web渗透进⾏横向渗透 </li>
+<li>常规Dump Hash后进⾏PTH，循环操作，直到获取Domain Admins </li>
+<li>利⽤SYSVOL和组策略⾸选项(GPP) </li>
+<li>MS14-068 </li>
+<li>利⽤VSS卷影副本拷贝ntds.dit </li>
+<li>利⽤Responder等⼯具进⾏ARP </li>
+<li>Netbios和LLMNR命名投毒 </li>
+<li>kerberoast(破解Ticket) </li>
+<li>MS17-010</li>
+</ul>
+<h3 id="AD-与-DC-的区别"><a href="#AD-与-DC-的区别" class="headerlink" title="AD 与 DC 的区别"></a>AD 与 DC 的区别</h3><p>如果网络规模较大，就考虑把网络中的众多对象，如计算机、用户、用户组、打印机、共享文件等，分门别类、井然有序地放在一个大仓 库中，并将检索信息整理好，以便查找、管理和使用这些对象（资源）。这个拥有层次结构的数据 库，就是活动目录数据库，简称AD库。</p>
+<p>用于存储活动目录数据库的计算机称为DC。</p>
+<p>要实现域环境，其实就是要安装AD，当内网中的一台计算机上安装了AD，它就变成 了DC</p>
+<h3 id="域中计算机的分类"><a href="#域中计算机的分类" class="headerlink" title="域中计算机的分类"></a>域中计算机的分类</h3><blockquote>
+<p>域控制器用于存放活动目录数据库，是域中必须要有的，而其他三种计算机则不是必须要有的（最简单的域只包含一台域控）</p>
+</blockquote>
+<h4 id="域控制器"><a href="#域控制器" class="headerlink" title="域控制器"></a>域控制器</h4><ul>
+<li><p>权限</p>
+<p>域控制器用于管理所有的网络访问，包括登录服务器、访问共享目录和资源。</p>
+<p>域控制器中存储了域范围内所有的账户和策略信息，包括安全策略、用户身份验证信息和账户信息</p>
+</li>
+</ul>
+<blockquote>
+<p>在网络中，可以有多台计算机被配置为域控制器，以分担用户的登录和访问操作。</p>
+<p>多个域控制器可以一起工作，自动备份用户账户和活动目录数据。</p>
+<p>即使部分域控制器瘫痪，网络访 问仍然不受影响，从而提高网络的安全性和稳定性。</p>
+</blockquote>
+<h4 id="成员服务器"><a href="#成员服务器" class="headerlink" title="成员服务器"></a>成员服务器</h4><blockquote>
+<p>成员服务器是指安装了服务器系统且加入了域、但没有安装活动目录的计算机，其主要任务是提供网络资源</p>
+</blockquote>
+<ul>
+<li>常见类型<ul>
+<li>文件服务器</li>
+<li>应用服务器</li>
+<li>数据库服务器</li>
+<li>Web 服 务器</li>
+<li>邮件服务器</li>
+<li>防火墙</li>
+<li>远程访问服务器</li>
+<li>打印服务器</li>
+</ul>
+</li>
+</ul>
+<h4 id="客户机"><a href="#客户机" class="headerlink" title="客户机"></a>客户机</h4><p>域中的计算机可以是安装了其他操作系统的计算机，用户利用这些计算机和域中的账户就可以登录域（称为域中的客户机）。</p>
+<p>域用户账号通过域的安全验证后，即可访问网络中的各种资源</p>
+<h4 id="独立服务器"><a href="#独立服务器" class="headerlink" title="独立服务器"></a>独立服务器</h4><blockquote>
+<p>如果服务器既不加入域，也不安装活动目录，就称其为独立服务器</p>
+</blockquote>
+<p>独立服务器和域没有关系。独立服务器可以创建工作组、与网络上的其他计算机共享资源，但不能获得活动目录提供的 任何服务。</p>
+<h3 id="域内权限"><a href="#域内权限" class="headerlink" title="域内权限"></a>域内权限</h3><h4 id="组"><a href="#组" class="headerlink" title="组"></a>组</h4><blockquote>
+<p>组（Group）是用户账号的集合</p>
+</blockquote>
+<p>通过向一组用户分配权限，就可以不必向每个用户分别分配 权限。</p>
+<h4 id="域本地组"><a href="#域本地组" class="headerlink" title="域本地组"></a>域本地组</h4><ul>
+<li><p>场景</p>
+<p>多域用户访问单域资源（访问同一个域）</p>
+</li>
+<li><p>组成</p>
+<p>可以从任何域添加用户账户、通用组和全局组，但只能在其所在域内指派权限</p>
+</li>
+<li><p>TIPS</p>
+<ul>
+<li>域本地组不能嵌套于其他组中</li>
+<li>域本地组主要用于授予位于本域资源的访问权限</li>
+</ul>
+</li>
+</ul>
+<h4 id="全局组"><a href="#全局组" class="headerlink" title="全局组"></a>全局组</h4><ul>
+<li><p>场景</p>
+<p>单域用户访问多域资源（必须是同一个域里面的用户）</p>
+</li>
+<li><p>组成</p>
+<p>只能在创建该全局组的域上进行添加用户和全局组，可以在域森林中的任何域中指派权限</p>
+</li>
+<li><p>TIPS</p>
+<ul>
+<li>全局组可以嵌套在其他组中</li>
+<li>不能添加到不同域的全局组中，全局组只能在创建它的域中添加用户和组</li>
+<li>虽然可以通过全局组授予用户访问任何域内资源的权限，但一般不直接用它来进行权限管理</li>
+</ul>
+</li>
+</ul>
+<h4 id="通用组"><a href="#通用组" class="headerlink" title="通用组"></a>通用组</h4><ul>
+<li><p>场景</p>
+<p>多域用户访问多域资源</p>
+</li>
+<li><p>组成</p>
+<p>通用组成员来自域森林中任何域的用户账户、全局组和其他通用组，可以在该域森林的任何域中指派权限，可以嵌套于其他域组中，非常适于域森林中的跨域访问</p>
+</li>
+<li><p>TIPS</p>
+<ul>
+<li><p>通用组的成员不是保存在各自的域控制器上的，而是保存在全局编录（GC）中的，任何变化的发生都会导致全林复制。</p>
+</li>
+<li><p>全局编录一般存储一些不经常发生变化的信息</p>
+</li>
+<li><p>由于用户账户是会经常变化的，建议不要直接将用户账户添加到通用组中，而要先将账户添加到全局组中，再 把这些相对稳定的全局组添加到通用组中，用户账户发生更新时，只需要更新全局组中账户</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>总结</p>
+<table>
+<thead>
+<tr>
+<th align="center">组</th>
+<th align="center">用户来源</th>
+<th align="center">权限范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">本地组</td>
+<td align="center">全林</td>
+<td align="center">本域</td>
+</tr>
+<tr>
+<td align="center">全局组</td>
+<td align="center">本域</td>
+<td align="center">全林</td>
+</tr>
+<tr>
+<td align="center">通用组</td>
+<td align="center">全林</td>
+<td align="center">全林</td>
+</tr>
+</tbody></table>
+<h4 id="A-G-DL-P策略"><a href="#A-G-DL-P策略" class="headerlink" title="A-G-DL-P策略"></a>A-G-DL-P策略</h4><blockquote>
+<p>A-G-DL-P  策略是指，将用户账号添加到全局组中，将全局组添加到域本地组中，然后为域本地组分配资源权限</p>
+</blockquote>
+<ul>
+<li><p>含义</p>
+<ul>
+<li>A（Account）表示用户账号</li>
+<li>G（Global Group）表示全局组</li>
+<li>U（Universal Group）表示通用组</li>
+<li>DL（Domain Local Group）表示域本地组</li>
+<li>P（Permission，许可）表示资源权限</li>
+</ul>
+</li>
+<li><p>应用场景</p>
+<p><img src="..%5CPictures%5C%E5%86%85%E7%BD%91%E5%AE%89%E5%85%A8%E5%9F%BA%E7%A1%802.jpg" alt="内网安全基础2"></p>
+<blockquote>
+<p>主机 2、3、4、5都需要访问 file 的权限，如果直接加到 Domain B 的本地组中，当 Domain A 新增同样需要访问 file 的主机时，则需要修改通知 Domain B 的 DC 对 DL 进行修改</p>
+</blockquote>
+<p><img src="..%5CPictures%5C%E7%BD%91%E5%AE%89%E5%85%A8%E5%9F%BA%E7%A1%803.jpg" alt="网安全基础3"></p>
+<blockquote>
+<p>在 Domain A 和 Domain B中创建全局组，讲需要访问 file 的主机添加到 G 中，再将两个全局组添加到Domain B 的本地组中，并给该DL访问 file 的权限，当 Domain A中新增主机时，只需要在 GA 中进行操作</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="内置组"><a href="#内置组" class="headerlink" title="内置组"></a>内置组</h4><blockquote>
+<p>在安装域控制器时，系统会自动生成一些组，称为内置组</p>
+<p>“Active Directory 用户和计算机” 控制台的 “Builtin” 和 “Users” 组织单元中就是内置组，</p>
+<ul>
+<li>内置的域本地组在 “Builtin” 组织单元中</li>
+<li>内置的全局组、通用组在 “Users” 组织单元中</li>
+</ul>
+</blockquote>
+<p>内置域本地组：</p>
+<ul>
+<li><p>管理员组（Administrators）</p>
+<blockquote>
+<p>成员可以完全不受限制地存取计算机/域的资源，不仅是最具 权力的一个组，也是在活动目录和域控制器中具有默认的管理员权限的组。</p>
+<p>该组的成员可 以更改 Enterprise Admins、Schem Admins 和 Domain Admins 组的成员关系，是域森林中强 大的服务管理组。</p>
+</blockquote>
+</li>
+<li><p>远程登录组（Remote Desktop Users）</p>
+<blockquote>
+<p>成员被授予远程登录的权限。 </p>
+</blockquote>
+</li>
+<li><p>打印机操作员组（Print Operators）</p>
+<blockquote>
+<p>成员可以管理网络打印机，包括建立、管理及删除网 络打印机，并可以在本地登录和关闭域控制器。</p>
+</blockquote>
+</li>
+<li><p>账号操作员组（Account Operators）</p>
+<blockquote>
+<p>成员可以创建和管理该域中的用户和组，并可以设置 其权限，但是，不能更改隶属 Administrators 或Domain Admins 组的账户，也不能修改这些 组。</p>
+<p>Account Operators 可以在本地登录域控制器。</p>
+<p>在默认情况下，该组中没有成员。</p>
+</blockquote>
+</li>
+<li><p>服务器操作员组（Server Operators）</p>
+<blockquote>
+<p>成员可以管理域服务器，包括建立/管理/删除任何服 务器的共享目录、管理网络打印机、备份任何服务器的文件、格式化服务器硬盘、锁定服 务器，以及变更服务器的系统时间等权限，并能关闭域控制器。在默认情况下，该组中没有成员。</p>
+</blockquote>
+</li>
+<li><p>备份操作员组（Backup Operators）</p>
+<blockquote>
+<p>成员可以在域控制器上执行备份和还原操作，并可以 在本地登录和关闭域控制器。在默认情况下，该组中没有成员。</p>
+</blockquote>
+</li>
+</ul>
+<p>全局组、通用组：</p>
+<ul>
+<li><p>域管理员组（Domain Admins）</p>
+<blockquote>
+<p>成员在所有加入域的服务器和工作站、域控制器和活动目 录上均默认拥有完整的管理员权限。</p>
+<p>因为该组会被添加到自己所在域的 Administrators 组 中，因此可以继承Administrators 组的<strong>所有权限</strong>。</p>
+<p>同时，该组默认会被添加到每台域成员计算机的本地Administrators 组中，这样，Domain Admins 就对域中的所有计算机拥有了所有权。</p>
+<p>如果希望某用户成为域系统管理员，建议将该用户加至Domain Admins 组中，而不要 直接将该用户添加到 Administrators 组中</p>
+</blockquote>
+</li>
+<li><p>企业系统管理员组（Enterprise Admins）</p>
+<blockquote>
+<p>域森林根域中的一个组。</p>
+<p>该组在域森林中的每个域内都是 Administrators 组的成员，因此对所有域控制器都有完全访问权。</p>
+</blockquote>
+</li>
+<li><p>架构管理员组（Schema Admins）</p>
+<blockquote>
+<p>域森林根域中的一个组，可以修改活动目录域森林的模式</p>
+<p>由于管理员组是提供活动目录和域控制器完整权限的域用户组，该组成员的资格是非常重要的。</p>
+</blockquote>
+</li>
+<li><p>域用户组（Domain Users）</p>
+<blockquote>
+<p>所有域的成员。</p>
+<p>在预设的情况下，任何由我们建立的用户账户 都是 Domain Users 组的成员，而任何由我们建立的计算机账户都是 Domain Computers 组的成员。</p>
+<p>因此，如果想让所有账户都具有某种资源存取权限，可以将该权限指定给 Domain Users 组，或者让 Domain Users 组属于具有该权限的组。</p>
+<p>Domain Users 组在预设的情况下是内建域局域 Users 组的成员</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="安全域"><a href="#安全域" class="headerlink" title="安全域"></a>安全域</h3><blockquote>
+<p>划分安全域的目的是将一组安全等级相同的计算机划入同一个网段，这一网段内的计算机拥有相同的网络边界，在网络边界上通过部署防火墙来实现对其他安全域的网络访问控制策略 （NACL），从而规定允许哪些 IP 地址访问此域和不允许哪些 IP 地址访问此域、允许此域访问哪些 IP 地址/网段和不允此域许访问哪些 IP 地址/网段</p>
+</blockquote>
+<ul>
+<li><p>功能</p>
+<p>将使得网络风险最小化，当发生 攻击时，可以将威胁尽可能地隔离，从而减少对域内计算机的影响</p>
+</li>
+</ul>
+<p><img src="..%5CPictures%5C%E5%86%85%E7%BD%91%E5%9F%BA%E7%A1%805.png" alt="内网基础5"></p>
+<h4 id="DMZ"><a href="#DMZ" class="headerlink" title="DMZ"></a>DMZ</h4><blockquote>
+<p>DMZ 称为隔离区（也称“非军事化区”），是为了解决安装防火墙后外部网络不能访问内部网<br>络服务器的问题而设立的一个非安全系统与安全系统之间的缓冲区。</p>
+<p>这个缓冲区位于企业内部网络和外部网络之间的小网络区域内。</p>
+<p>在这个小网络区域内，可以放置一些必须公开的服务器设施， 如企业 Web 服务器、FTP 服务器和论坛等。</p>
+<p>DMZ区是对外提供服务的区域，可以从外部访问</p>
+</blockquote>
+<h4 id="网络边界"><a href="#网络边界" class="headerlink" title="网络边界"></a>网络边界</h4><blockquote>
+<p>网络边界是指内部安全网络与外部非安全网络的分界线。</p>
+<p>在网络边界一般会放置防火墙及入侵检测、入侵防御产品等。</p>
+<p>如果有 Web 应用，还会设置WAF，以便更加有效地保护内网。</p>
+</blockquote>
+<h4 id="访问控制策略"><a href="#访问控制策略" class="headerlink" title="访问控制策略"></a>访问控制策略</h4><blockquote>
+<p>目的：实现 DMZ 区的屏障功能</p>
+</blockquote>
+<ul>
+<li><p>内网可以访问外网</p>
+<p>内网用户需要自由地访问外网。在这一策略中，防火墙需要执行NAT</p>
+</li>
+<li><p>内网可以访问DMZ</p>
+<p>此策略使内网用户可以使用或者管理DMZ中的服务器。 </p>
+</li>
+<li><p>外网不能访问内网</p>
+<p>这是防火墙的基本策略。内网中存放的是公司内部数据，显然这些数据是不允许外网用户访问的。如果要访问，就要通过 VPN方式来进行。</p>
+</li>
+<li><p>外网可以访问DMZ</p>
+<p>DMZ中的服务器需要为外界提供服务，所以外网必须可以访问DMZ。 同时，外网访问DMZ需要由防火墙来完成从对外地址到服务器实际地址的转换。</p>
+</li>
+<li><p>DMZ 不能访问内网</p>
+<p>如果不执行此策略，当入侵者攻陷 DMZ 时，内网将不会受到保护。 </p>
+</li>
+<li><p>DMZ不能访问外网</p>
+<p>此策略也有例外，如在DMZ中放置<strong>邮件服务器</strong>时，就需要访问外网， 否则将不能正常工作。</p>
+</li>
+</ul>
+<h4 id="内网"><a href="#内网" class="headerlink" title="内网"></a>内网</h4><blockquote>
+<p>内网区又可以分为办公区和核心区</p>
+</blockquote>
+<ul>
+<li><p>办公区</p>
+<blockquote>
+<p>公司员工日常的工作区，一般会安装防病毒、主机入侵检测产品等</p>
+<p>办公区一般 能够访问 DMZ 区。</p>
+<p>如果运维人员也在办公区，那么部分主机也能访问核心数据区（很多 大企业还会使用堡垒机来统一管理用户的登录行为）。</p>
+</blockquote>
+<p>攻击者如果想进入内网，一般会使用 鱼叉攻击、水坑攻击，当然还有社会工程学手段。</p>
+<p>办公区人员多而杂，变动也很频繁，在安全管理上会存在诸多漏洞，因此也是攻击者进入内网的重要途径之一。</p>
+</li>
+<li><p>核心区</p>
+<blockquote>
+<p>一般存放企业最重要的数据、文档等信息资产，所设置的保护措施也非常严密， 往往只有很少的主机能够访问，而且会设置日志记录、安全审计等安全措施。</p>
+<p>从外部是绝难直接访问核心区的。</p>
+</blockquote>
+<p>一般来说，能够直接访问核心区的只有运维人员或者 IT 部门的主 管，所以，攻击者会重点关注这些用户的信息（在内网中进行横向移动的时候，攻击者会优先查找这些主机）</p>
+</li>
+</ul>
+<h3 id="VPN"><a href="#VPN" class="headerlink" title="VPN"></a>VPN</h3><blockquote>
+<p>Virtual Private Network，VPN，虚拟专用网络</p>
+<p>虚拟专用网指的是依靠ISP（因特网服务提供商）和其他NSP（网络服务提供商），在公用网络中建立专用的数据通信网络的技术</p>
+</blockquote>
+<ul>
+<li><p>通讯过程</p>
+<blockquote>
+<p>通常情况下，VPN网关采取双网卡结构，外网卡使用公网IP接入Internet</p>
+<p>场景：网络一（假定为公网internet）的终端A访问网络二（假定为公司内网）的终端B，其发出的访问数据包的目标地址为终端B的内部IP地址。 </p>
+</blockquote>
+<ul>
+<li>网络一的VPN网关在接收到终端A发出的访问数据包时对其目标地址进行检查，如果目标地址属于网络二的地址，则将该数据包进行封装，封装的方式根据所采用的VPN技术不同而不同，同时VPN网关会构造一个新VPN数据包，并将封装后的原数据包作为VPN数据包的负载，VPN数据包的目标地址为网络二的<strong>VPN网关的外部地址</strong></li>
+<li>网络一的VPN网关将VPN数据包发送到Internet，由于VPN数据包的目标地址是网络二的VPN网关的外部地址，所以该数据包将被Internet中的路由正确地发送到网络二的VPN网关</li>
+<li>网络二的VPN网关对接收到的数据包进行检查，如果发现该数据包是从网络一的VPN网关发出的，即可判定该数据包为VPN数据包，并对该数据包进行解包处理。解包的过程主要是先将VPN数据包的包头剥离，再将数据包反向处理还原成原始的数据包。 </li>
+<li>网络二的VPN网关将还原后的原始数据包发送至目标终端B，由于<strong>原始数据包的目标地址是终端B的IP</strong>，所以该数据包能够被正确地发送到终端B。在终端B看来，它收到的数据包就和从终端A直接发过来的一样。 </li>
+</ul>
+</li>
+<li><p>分类</p>
+<ul>
+<li>PPTP （二层）</li>
+<li>L2TP  （二、三层）</li>
+<li>IPsec  （三层）</li>
+<li>MPLS  （二、三层）</li>
+<li>SSL （Secure Socket Lyaer）</li>
+</ul>
+<blockquote>
+<p>防火墙VPN，使用防火墙连到因特网上，所需要的只是增加加密软件</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="安全设备"><a href="#安全设备" class="headerlink" title="安全设备"></a>安全设备</h2><h3 id="堡垒机"><a href="#堡垒机" class="headerlink" title="堡垒机"></a>堡垒机</h3><blockquote>
+<p>堡垒主机是指在极其关键的位置上用于安全防御的某个系统</p>
+<p>堡垒主机起到一个“牺牲主机”的角色。如果攻击者要攻击你的网络，那么他们只能攻击到这台主机。</p>
+<p>从网络安全上来看，堡垒主机是防火墙管理员认为最强壮的系统。</p>
+<p>堡垒主机可作为代理服务器的平台。</p>
+</blockquote>
+<h3 id="防火墙"><a href="#防火墙" class="headerlink" title="防火墙"></a>防火墙</h3><blockquote>
+<p>防火墙（Firewall），是一种<strong>硬件设备</strong>或<strong>软件</strong>系统，主要架设在内部网络和外部网络间，为了防止外界恶意程式对内部系统的破坏，或者阻止内部重要信息向外流出，有双向监督功能</p>
+</blockquote>
+<h4 id="防火墙分类"><a href="#防火墙分类" class="headerlink" title="防火墙分类"></a>防火墙分类</h4><ul>
+<li><p>包过滤技术</p>
+<blockquote>
+<p>包过滤技术是一种简单、有效的安全控制技术，它工作在<strong>网络层</strong>，通过在网络间相互连接的设备上加载规则，对通过设备的数据包进行检查，限制数据包进出内部网络。</p>
+</blockquote>
+<ul>
+<li><p>包头信息</p>
+<blockquote>
+<p>IP 源地址、IP目的地址、封装协议(TCP、UDP、或IP Tunnel)、TCP/UDP源端口、ICMP包类型</p>
+</blockquote>
+</li>
+<li><p>优点</p>
+<p>对用户透明，传输性能高</p>
+</li>
+<li><p>缺陷</p>
+<p>由于安全控制层次在网络层、传输层，安全控制的力度也只限于源地址、目的地址和端口号，因而只能进行较为初步的安全控制，对于恶意的拥塞攻击、内存覆盖攻击或病毒等高层次的攻击手段，则无能为力</p>
+</li>
+<li><p>TIPS：</p>
+<p>访问网站时本地端口是临时分配的，也就是说这个端口是不定的，只要是1023以上的端口都有可能，所以只能把这些所有端口都开放了，于是在防火墙上的控制列表中的目标端口填上1024-65535</p>
+</li>
+</ul>
+</li>
+<li><p>代理技术</p>
+<blockquote>
+<p>应用代理防火墙工作在OSI的第七层，它通过检查所有<strong>应用层</strong>的信息包，并将检查的内容信息放入决策过程，从而提高网络的安全性</p>
+<p>提供了详细的日志和审计功能</p>
+</blockquote>
+<ul>
+<li><p>工作原理</p>
+<blockquote>
+<p>应用网关防火墙是通过打破客户机／服务器模式实现的。</p>
+<p>每个客户机／服务器通信需要两个连接：一个是从客户端到防火墙，另一个是从防火墙到服务器</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Client   &lt;---&gt;  Firewall  &lt;---&gt;  Server</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>缺陷</p>
+<p>每个代理需要一个不同的应用进程，或一个后台运行的服务程序，对每个新的应用必须添加针对此应用的服务程序，否则不能使用该服务。所以，应用网关防火墙具有可伸缩性差的缺点，而且代理服务器很有可能会成为系统的瓶颈</p>
+</li>
+</ul>
+</li>
+<li><p>状态检测技术</p>
+<blockquote>
+<p>状态检测防火墙工作在OSI的第二至四层，采用状态检测包过滤的技术，是传统包过滤功能扩展而来。</p>
+</blockquote>
+<ul>
+<li><p>工作原理</p>
+<blockquote>
+<p>状态检测技术采用的是一种基于连接的状态检测机制，将属于同一连接的所有包作为一个整体的数据流看待，构成连接状态表，维护了连接，将进出网络的数据当成一个个的事件来处理，通过规则表与状态表的共同配合，对表中的各个连接状态因素加以识别</p>
+</blockquote>
+<ul>
+<li>数据包进行检测</li>
+<li>对控制通信的基本状态信息（包括通信信息、通信状态、应用状态和信息操作性）进行检测，以完成对数据包的检测和过滤</li>
+</ul>
+</li>
+<li><p>优点</p>
+<p>提供了高度安全的解决方案，同时具有较好的适应性和扩展性</p>
+</li>
+<li><p>缺陷</p>
+<p>由于缺乏对应用层协议的深度检测功能，无法彻底的识别数据包中大量的垃圾邮件、广告以及木马程序等</p>
+</li>
+</ul>
+</li>
+<li><p>完全内容检测技术</p>
+<p>完全内容检测技术防火墙综合状态检测与应用代理技术，并在此基础上进一步基于多层检测架构，把防病毒、内容过滤、应用识别等功能整合到防火墙里，其中还包括IPS功能，多单元融为一体，在网络界面对应用层扫描，把防病毒、内容过滤与防火墙结合起来，这体现了网络与信息安全的新思路，(因此也被称为下一代防火墙技术)。</p>
+<p>它在网络边界实施OSI第七层的内容扫描，实现了实时在网络边缘布署病毒防护、内容过滤等应用层服务措施。</p>
+<p>完全内容检测技术防火墙可以检查整个数据包内容，根据需要建立连接状态表，网络层保护强，应用层控制细等优点，但由于功能集成度高，对产品硬件的要求比较高。</p>
+</li>
+</ul>
+<h4 id="防火墙架构"><a href="#防火墙架构" class="headerlink" title="防火墙架构"></a>防火墙架构</h4><ul>
+<li><p>双宿/多宿主机模式</p>
+<blockquote>
+<p>用一台装有两块或多块网卡的堡垒主机做防火墙，两块或多块网卡各自与受保护网和外部网相连</p>
+</blockquote>
+<p><img src="..%5CPictures%5C%E5%86%85%E7%BD%91%E5%9F%BA%E7%A1%806.png" alt="内网基础6"></p>
+<ul>
+<li>特点<ul>
+<li>主机的路由功能是被禁止的，两个网络之间的通信通过应用层代理服务来完成的</li>
+<li>当黑客侵入堡垒主机并使其具有路由功能，防火墙将无用</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>屏蔽主机模式</p>
+<blockquote>
+<p>专门设置过滤路由器把所有外部到内部的连接都路由到了堡垒主机</p>
+</blockquote>
+<p><img src="..%5CPictures%5C%E5%86%85%E7%BD%91%E5%9F%BA%E7%A1%807.png" alt="内网基础7"></p>
+<ul>
+<li><p>经典架构</p>
+<p>保证外部系统对内部网络的操作只能经过堡垒主机</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">内网 &lt;---&gt; 堡垒主机 &lt;---&gt;  包过滤路由器  &lt;---&gt;  Internet</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>特点</p>
+<p>安全等级比包过滤防火墙系统高，因为它实现了网络层安全（包过滤）和应用层安全（代理服务）</p>
+</li>
+</ul>
+</li>
+<li><p>屏蔽子网模式</p>
+<blockquote>
+<p>添加了额外的一层保护体系——周边网络</p>
+<p>堡垒主机位于周边网络上，应用层网关，代理服务，入站必须经过</p>
+<p>周边网络和内部网络被内部路由器分开，防止堡垒主机对内部的影响</p>
+</blockquote>
+<p><img src="..%5CPictures%5C%E5%86%85%E7%BD%91%E5%9F%BA%E7%A1%808.png" alt="内网基础8"></p>
+<ul>
+<li><p>目的</p>
+<p>堡垒主机是用户网络上最容易受侵袭的机器。通过在周边网络上隔离堡垒主机，能减少在堡垒主机被侵入的影响</p>
+</li>
+</ul>
+</li>
+<li><p>混合模式</p>
+<blockquote>
+<p>以上模式结构的混合使用</p>
+</blockquote>
+<ul>
+<li>将屏蔽子网结构中的内部路由器和外部路由器合并</li>
+<li>合并屏蔽子网结构中堡垒主机与外部路由器</li>
+<li>使用多台堡垒主机</li>
+<li>使用多台外部路由器</li>
+<li>使用多个周边网络</li>
+</ul>
+</li>
+</ul>
+<h3 id="IDS"><a href="#IDS" class="headerlink" title="IDS"></a>IDS</h3><blockquote>
+<p>Intrusion Detection System，IDS，入侵检测系统，入侵检测是监测计算机网络和系统以发现违反安全策略事件的过程</p>
+</blockquote>
+<ul>
+<li><p>工作原理</p>
+<p>对收集来的报文，入侵检测系统提取相应的流量（网络数据包或主机日志）统计特征值，并利用内置的入侵知识库，与这些流量特征进行智能分析比较匹配</p>
+<p>根据预设的阀值，匹配耦合度较高的报文流量将被认为是进攻，入侵检测系统将根据相应的配置进行报警或进行有限度的反击。</p>
+</li>
+<li><p>特点</p>
+<ul>
+<li>入侵检测系统是一种主动防御技术（但是只能检测是否遭到攻击）</li>
+<li>不跨接多个物理网段（通常只有一个监听端口），无须转发任何流量，而只需要在网络上被动的、无声息的收集它所关心的报文即可</li>
+<li>工作在计算机网络系统中的关键节点上（旁路）</li>
+<li>通过实时地收集和分析计算机网络或系统中的信息</li>
+<li>来检查是否出现违反安全策略的行为和遭到袭击的迹象</li>
+<li>进而达到防止攻击、预防攻击的目的</li>
+</ul>
+</li>
+<li><p>组成</p>
+<blockquote>
+<p>完成入侵检测功能的软件、硬件组合</p>
+</blockquote>
+<ul>
+<li>对信息的收集和预处理</li>
+<li>入侵分析引擎</li>
+<li>产生反应的响应部件</li>
+</ul>
+</li>
+<li><p>功能</p>
+<ul>
+<li>监控、分析用户和系统的活动</li>
+<li>发现入侵企图或异常现象</li>
+<li>审计系统的配置和弱点</li>
+<li>评估关键系统和数据文件的完整性</li>
+<li>对异常活动的统计分析</li>
+<li>识别攻击的活动模式</li>
+<li>实时报警和主动响应</li>
+</ul>
+</li>
+<li><p>缺点</p>
+<p>阻断UDP会话不太灵，对加密的数据流束手无策</p>
+</li>
+</ul>
+<p>分类</p>
+<h4 id="基于主机（系统）的-IDS"><a href="#基于主机（系统）的-IDS" class="headerlink" title="基于主机（系统）的 IDS"></a>基于主机（系统）的 IDS</h4><ul>
+<li><p>工作原理</p>
+<blockquote>
+<p>通过监视与分析主机的审计记录和日志文件来检测入侵，如内存和文件的变化等</p>
+</blockquote>
+</li>
+<li><p>应用场景</p>
+<blockquote>
+<p>保护运行关键应用的服务器</p>
+</blockquote>
+</li>
+<li><p>基本技术</p>
+<ul>
+<li><p>误用检测</p>
+<blockquote>
+<p>适用于已知使用模式的可靠检测</p>
+<p>入侵特征描述了安全事件或其它误用事件的特征、条件、排列和关系</p>
+</blockquote>
+</li>
+<li><p>异常检测</p>
+<p>异常行为包括入侵行为。最理想情况下，异常行为集合等同于入侵行为集合</p>
+</li>
+</ul>
+</li>
+<li><p>优点</p>
+<ul>
+<li><p>性能价格比高</p>
+<p>在主机数量较少的情况下，这种方法的性能价格比更高；</p>
+</li>
+<li><p>更加细致</p>
+<p>可以很容易地监测一些活动，如敏感文件、目录、程序或端口的存取，而这些活动很难基于协议的线索发现；</p>
+</li>
+<li><p>视野集中</p>
+<p>一旦入侵者得到了一个主机用户名和口令，基于主机的代理是最有可能区分正常活动和非法活动的；</p>
+</li>
+<li><p>易于用户剪裁</p>
+<p>每一个主机有自己的代理，当然用户剪裁更加方便；</p>
+</li>
+<li><p>较少的主机</p>
+<p>基于主机的方法有时不需要增加专门的硬件平台；</p>
+</li>
+<li><p>对网络流量不敏感</p>
+<p>用代理的方式一般不会因为网络流量的增加而丢掉对网络行为的监视</p>
+</li>
+</ul>
+</li>
+<li><p>缺点</p>
+<ul>
+<li>缺乏平台支持，可移植性差，应用范围受到严重限制。</li>
+<li>对一个网络的所有机子进行一次猜测的检查有困难</li>
+</ul>
+</li>
+</ul>
+<h4 id="基于网络的-IDS"><a href="#基于网络的-IDS" class="headerlink" title="基于网络的 IDS"></a>基于网络的 IDS</h4><ul>
+<li><p>工作原理</p>
+<blockquote>
+<p>基于网络的IDS通常将主机的网卡设成混乱模式，实时监视并分析通过网络的所有通信业务</p>
+<p>通过连接在网络上的站点捕获网上的包，并分析其是否具有已知的攻击模式，以此来判别是否为入侵者。</p>
+<p>当该模型发现某些可疑的现象时，也一样会产生告警，并会向一个中心管理站点发出告警信号</p>
+</blockquote>
+</li>
+<li><p>优点</p>
+<ul>
+<li><p>侦测速度快</p>
+<p>基于网络的监测器，通常能在微秒或秒级发现问题。而大多数基于主机的产品则要依靠最近几分钟内审计记录的分析；</p>
+</li>
+<li><p>隐蔽性好</p>
+<p>一个网络上的监测器不像主机那样显眼和易被存取，因而也不那么容易遭受攻击；</p>
+</li>
+<li><p>视野更宽</p>
+<p>基于网络的方法甚至可以作用在网络边缘上，即攻击者还没能接入网络时就被制止；</p>
+</li>
+<li><p>较少的监测器</p>
+<p>由于使用一个监测器可以保护<strong>一个共享的网段</strong>，所以不需要很多的监测器；</p>
+</li>
+<li><p>占资源少</p>
+<p>在被保护的设备上不占用任何资源，这点较主机模型最为突出。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="分布式IDS"><a href="#分布式IDS" class="headerlink" title="分布式IDS"></a>分布式IDS</h4><ul>
+<li><p>工作原理</p>
+<blockquote>
+<p>一般由多个部件组成，分布在网络的各个部分，完成相应功能，分别进行数据采集、数据分析等</p>
+<p>通过中心的控制部件进行数据汇总、分析、产生入侵警报等</p>
+</blockquote>
+</li>
+<li><p>优点</p>
+<p>不仅可以检测到针对单独主机的入侵，同时也可以检测到针对整网络上的主机的入侵</p>
+</li>
+</ul>
+<h3 id="IPS"><a href="#IPS" class="headerlink" title="IPS"></a>IPS</h3><blockquote>
+<p>IPS，Intrusion Prevention Systems，入侵防御系统，实现实时检查和阻止入侵。</p>
+</blockquote>
+<ul>
+<li><p>特点</p>
+<p>提供主动防护，其设计宗旨是预先对入侵活动和攻击性网络流量进行拦截，避免其造成损失，发生在攻击之前</p>
+</li>
+<li><p>工作原理</p>
+<p><img src="..%5CPictures%5C%E5%86%85%E7%BD%91%E5%9F%BA%E7%A1%809.png" alt="内网基础9"></p>
+<p>IPS是通过直接嵌入到网络流量中实现主动防御的，即通过一个网络端口接收来自外部系统的流量，经过检查确认其中不包含异常活动或可疑内容后，再通过另一个端口将它传送到内部系统中。</p>
+<p>通过这个过程，有问题的数据包以及所有来自同一数据流的后续数据包，都将在IPS设备中被清除掉。</p>
+<p>当新的攻击手段被发现后，IPS就会创建一个新的过滤器。</p>
+<p>所有流经IPS的数据包都被分类，分类的依据是数据包中的包头信息，如源IP地址和目的IP地址、端口号和应用域。</p>
+<p>通过检查的数据包可以继续前进，包含恶意内容的数据包就会被丢弃，被怀疑的数据包需要接受进一步的检查。</p>
+</li>
+<li><p>作用</p>
+<p>IPS是对防病毒软件和防火墙的补充，能有效阻止蠕虫、病毒、木马、拒绝服务攻击、间谍软件、VOIP攻击以及点到点应用滥用</p>
+</li>
+</ul>
+<p>分类</p>
+<h4 id="主机入侵防御系统"><a href="#主机入侵防御系统" class="headerlink" title="主机入侵防御系统"></a>主机入侵防御系统</h4><blockquote>
+<p>Host Intrusion Prevent System ，HIPS，主机入侵防御系统</p>
+</blockquote>
+<ul>
+<li><p>工作原理</p>
+<p>通过在主机/服务器上安装软件代理程序，防止网络攻击入侵操作系统以及应用程序。</p>
+</li>
+<li><p>功能</p>
+<ul>
+<li>保护服务器的安全弱点不被不法分子所利用</li>
+<li>根据自定义的安全策略以及分析学习机制来阻断对服务器、主机发起的恶意入侵。</li>
+<li>阻断缓冲区溢出、改变登录口令、改写动态链接库以及其他试图从操作系统夺取控制权的入侵行为，整体提升主机的安全水平</li>
+</ul>
+</li>
+</ul>
+<h4 id="网络入侵防御系统"><a href="#网络入侵防御系统" class="headerlink" title="网络入侵防御系统"></a>网络入侵防御系统</h4><blockquote>
+<p>Network Intrusion Prevention System，NIPS，网络入侵防御系统</p>
+</blockquote>
+<ul>
+<li><p>工作原理</p>
+<p>通过检测流经的网络流量，提供对网络系统的安全保护。</p>
+<p>由于它采用在线连接方式，所以一旦辨识出入侵行为，NIPS就可以去除整个网络会话，而不仅仅是复位会话</p>
+<p>由于实时在线，NIPS需要具备很高的性能，以免成为网络的瓶颈，因此NIPS通常被设计成类似于交换机的网络设备，提供线速吞吐速率以及多个网络端口。</p>
+</li>
+<li><p>特点</p>
+<p>NIPS必须基于特定的硬件平台，才能实现千兆级网络流量的深度数据包检测和阻断功能。</p>
+<p>这种特定的硬件平台通常可以分为三类：</p>
+<ul>
+<li>网络处理器(网络芯片)</li>
+<li>专用的FPGA编程芯片</li>
+<li>专用的ASIC芯片</li>
+</ul>
+<blockquote>
+<p>NIPS的实时检测与阻断功能很有可能出现在未来的交换机上。</p>
+<p>随着处理器性能的提高，每一层次的交换机都有可能集成入侵防护功能。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="应用入侵防护"><a href="#应用入侵防护" class="headerlink" title="应用入侵防护"></a>应用入侵防护</h4><blockquote>
+<p>Application Intrusion Prevention，AIP，应用入侵防护</p>
+</blockquote>
+<ul>
+<li><p>工作原理</p>
+<p>把基于主机的入侵防护扩展成为位于应用服务器之前的网络设备。</p>
+<p>AIP被设计成一种高性能的设备，配置在应用数据的网络链路上，以确保用户遵守设定好的安全策略，保护服务器的安全。</p>
+<p>NIPS工作在网络上，直接对数据包进行检测和阻断，与具体的主机/服务器操作系统平台无关</p>
+</li>
+</ul>
+<h3 id="防火墙、IDS、IPS-的区别"><a href="#防火墙、IDS、IPS-的区别" class="headerlink" title="防火墙、IDS、IPS 的区别"></a>防火墙、IDS、IPS 的区别</h3><table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">Firewall</th>
+<th align="center">IDS</th>
+<th align="center">IPS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">概念</td>
+<td align="center">访问控制类产品</td>
+<td align="center">审计类产品</td>
+<td align="center">访问控制类产品</td>
+</tr>
+<tr>
+<td align="center">保护内容</td>
+<td align="center">一般只能在3-4层，5-7层比较薄弱</td>
+<td align="center">5-7层保护较强</td>
+<td align="center">5-7层保护较强</td>
+</tr>
+<tr>
+<td align="center">应用</td>
+<td align="center">转发、内网保护、流控、过滤</td>
+<td align="center">攻击情况</td>
+<td align="center">攻击情况</td>
+</tr>
+<tr>
+<td align="center">部署位置</td>
+<td align="center">串行接入，部署在网络边界，用于隔离内网</td>
+<td align="center">旁路接入，尽可能靠近攻击源或靠近受保护资产（如服务器区域的交换机、Internet接入路由器之后的第一台交换机、重点保护网段的局域网交换机上）</td>
+<td align="center">采用Inline接入，常见部署位置：办公网与外部网络连接部位（出/入口）、重要服务器集群前端、办公网内部接入层</td>
+</tr>
+<tr>
+<td align="center">工作机制</td>
+<td align="center">网络边界控制</td>
+<td align="center">主要针对已发生的攻击事件或异常行为进行处理</td>
+<td align="center">针对攻击事件或异常行为提前感知及预防</td>
+</tr>
+<tr>
+<td align="center">缺点</td>
+<td align="center"></td>
+<td align="center">阻断UDP会话不太灵，对加密的数据流束手无策</td>
+<td align="center">同样硬件的情况下，性能比IDS低的多；实际应用中，误杀和漏杀和IDS一样，主要是签名库决定的。但是随着UDP协议的广泛使用，IPS在UDP上的误杀率可能会高于IDS</td>
+</tr>
+</tbody></table>
+<h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><h3 id="SAM"><a href="#SAM" class="headerlink" title="SAM"></a>SAM</h3><blockquote>
+<p>SAM(安全账户管理器)，SAM是⽤来存储 Windows 操作系统密码的数据库⽂件，为了避免明⽂密码泄漏，SAM⽂ 件中保存的是明⽂密码经过⼀系列算法处理过的Hash值，被保存的Hash分为LM Hash、NTLMHash。</p>
+<p>在⽤户在 本地或远程登陆系统时，会将Hash值与SAM⽂件中保存的Hash值进⾏对⽐。在后期的Windows系统中，SAM⽂ 件中被保存的密码Hash都被密钥 SYSKEY 加密。 </p>
+<p>SAM⽂件在磁盘中的位置在 C:\windows\system32\config\sam  SAM⽂件在Windows系统启动后被系统锁定，⽆法进⾏<strong>移动和复制</strong></p>
+</blockquote>
+<h3 id="IPC"><a href="#IPC" class="headerlink" title="IPC"></a>IPC</h3><blockquote>
+<p>Inter-Process Communication，IPC，进程间通信，指⾄少两个进程或线程间传送数据或信号的⼀些技术或⽅法</p>
+</blockquote>
+<ul>
+<li>功能<ul>
+<li>信息共享：Web服务器，通过⽹页浏览器使⽤进程间通信来共享web⽂件（⽹页等）和多媒体 </li>
+<li>加速：维基百科使⽤通过进程间通信进⾏交流的多服务器来满⾜⽤户的请求 </li>
+<li>模块化</li>
+<li>私有权分离</li>
+</ul>
+</li>
+</ul>
+<h4 id="IPC-1"><a href="#IPC-1" class="headerlink" title="IPC$"></a>IPC$</h4><blockquote>
+<p>IPC$ 是共享 命名管道的资源，为了让进程间通信⽽开放的命名管道，通过提供可信任的⽤户名和口令，连接双⽅可以建⽴安全的通道并以此通道进⾏加密数据的交换，从⽽实现对远程计算机的访问，从NT/2000开始使⽤</p>
+</blockquote>
+<ul>
+<li><p>TIPS</p>
+<ul>
+<li>IPC$ 在同⼀时间内，两个IP之间只允许建⽴⼀个连接</li>
+<li>NT/2000在提供了 ipc$ 功能的同时，在初次安装系统时还打开了默认共享，即所有的逻辑共享(c ,e$……)和系统 ⽬录winnt或管理员⽬录(admin$)共享</li>
+</ul>
+</li>
+<li><p>空连接</p>
+<blockquote>
+<p>对于NT，在默认安全设置下，借助空连接可以列举⽬标主机上的⽤户和共享，访问everyone权限的共享，访问⼩ 部分注册表等；</p>
+<p>在WIndows Server 2000及以后作⽤更⼩，因为在Windows 2000 和以后版本中默认只有管理员有 权从⽹络访问到注册表</p>
+</blockquote>
+</li>
+<li><p>命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">建⽴IPC$空连接：net use \\192.168.1.101\ipc$ &quot;&quot; /user:&quot;domain\username&quot; </span><br><span class="line"></span><br><span class="line">建⽴IPC$⾮空连接：net use \\192.168.1.101\ipc$ &quot;password&quot; /user:&quot;domain\username&quot; </span><br><span class="line"></span><br><span class="line">删除IPC$连接：net use \\192.168.1.101\ipc$ /del </span><br><span class="line"></span><br><span class="line">已经建⽴IPC$连接并且有权限，将⽬标C盘映射到本地Z盘：net use z: \\192.168.1.101\c$ </span><br><span class="line"></span><br><span class="line">删除映射：net use z: /del </span><br><span class="line"></span><br><span class="line">关闭IPC默认共享：net use ipc$ /del</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>TIPS</p>
+<ul>
+<li>现在绝⼤多数的Windows操作系统默认策略不允许来⾃远程⽹络验证的空密码，所以IPC空连接已经被废弃。 </li>
+<li>如果远程服务端未开启139、445端口，⽆法使⽤IPC$进⾏连接。</li>
+</ul>
+</li>
+</ul>
+<h3 id="NETBIOS"><a href="#NETBIOS" class="headerlink" title="NETBIOS"></a>NETBIOS</h3><blockquote>
+<p>NETBIOS(⽹络基本输⼊输出系统)，严格讲不属于⽹络协议，NETBIOS是应⽤程序接⼜(API)</p>
+<p>早期使⽤ NetBIOS Frames(NBF)协议进⾏运作,是⼀种非路由⽹络协议，位于传输层</p>
+<p>后期NetBIOS over TCP/IP（缩写为NBT、NetBT）出现，使之可以连接到TCP/IP，是⼀种⽹络协议，位于会话层</p>
+<p>基于 NETBIOS协议⼴播获得计算机名称——解析为相应IP地址，WindowsNT以后的所有操作系统上均可⽤，<strong>不⽀持IPV6</strong></p>
+</blockquote>
+<ul>
+<li><p>服务类型</p>
+<ul>
+<li><p>NetBIOS-NS（名称服务）</p>
+<p>为了启动会话和分发数据报，程序需要使⽤Name Server注册NETBIOS名称， 可以告诉其他应⽤程序提供什么服务，默认监听UDP137端口，也可以使⽤TCP 137端口</p>
+</li>
+<li><p>Datagram distribution service（数据报分发服务）</p>
+<p>⽆连接，负责错误检测和恢复，默认在UDP 138端口。 </p>
+</li>
+<li><p>Session Server（会话服务）</p>
+<p>允许两台计算机建⽴连接，默认在TCP 139端口</p>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="利用-NETBIOS-发现主机"><a href="#利用-NETBIOS-发现主机" class="headerlink" title="利用 NETBIOS 发现主机"></a>利用 NETBIOS 发现主机</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># nbtstat(Windows⾃带命令) 获取⽬标主机MAC地址 </span><br><span class="line">nbtstat -A 192.168.100.200</span><br><span class="line"></span><br><span class="line"># nbtscan</span><br><span class="line"># 扫描指定⽹段的主机名和⽹络开放共享 </span><br><span class="line"># SHARING表⽰开放，DC 表⽰可能是域控</span><br><span class="line">nbtscan.exe 192.168.100.1/24</span><br></pre></td></tr></table></figure>
+
+<h3 id="LLMNR"><a href="#LLMNR" class="headerlink" title="LLMNR"></a>LLMNR</h3><blockquote>
+<p>LLMNR是链路本地多播名称解析，当局域⽹中的DNS服务器不可⽤时，可以使⽤LLMNR解析本地⽹段上机器名称，只有WindowsVista和更⾼版本才⽀持LLMNR，⽀持IPV6</p>
+</blockquote>
+<ul>
+<li>工作流程<ul>
+<li>主机在内部名称缓存中查询名称 </li>
+<li>在主DNS查询名称 </li>
+<li>在备⽤DNS查询名称 </li>
+<li>使⽤LLMNR查询名称<ul>
+<li>通过UDP发送到组播地址224.0.0.252:5355，查询主机名对应的IP，使⽤的是<strong>DNS格式数据包</strong>，数据包会被限制在本地⼦⽹中。 </li>
+<li>本地⼦⽹中所有⽀持 LLMNR 的主机在受到查询请求时，会对⽐⾃⼰的主机名是否相同，不同就丢弃，相同就发送包含⾃⼰IP的单播信息给查询主机</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="WMI"><a href="#WMI" class="headerlink" title="WMI"></a>WMI</h3><blockquote>
+<p>WMI(Windows管理规范)，由⼀系列对Windows Driver Model的扩展组成，它通过仪器组件提供信息和通知，提供了⼀个操作系统的接口。</p>
+</blockquote>
+<blockquote>
+<p>在渗透测试过程中，攻击者往往使⽤脚本通过WMI接口完成对Windows操作系统的操作，远程WMI连接通过DCOM进⾏。例如：WMIC、Invoke-WmiCommand、Invoke-WMIMethod等。</p>
+<p>另⼀种⽅ 法是使⽤Windows远程管理（WinRM）</p>
+</blockquote>
+<h3 id="SID"><a href="#SID" class="headerlink" title="SID"></a>SID</h3><blockquote>
+<p>安全标识符是⼀个唯⼀的字符串，它可以代表⼀个账户、⼀个⽤户 组、或者是⼀次登录。</p>
+<p>通常它还有⼀个SID固定 列表，例如 Everyone这种已经内置的账户，默认拥有固定的SID</p>
+<p>Windows 2000 中的内部进程将引用帐户的 SID 而不是帐户的用户或组名。如果创建帐户，再删除帐户，然后使用相同的用户名创建另一个帐户，则新帐户将不具有授权给前一个帐户的权力或权限，原因是该帐户具有不同的 SID 号</p>
+</blockquote>
+<ul>
+<li><p>表现形式</p>
+<ul>
+<li>域 SID - 用户ID</li>
+<li>计算机 SID - 用户ID</li>
+</ul>
+</li>
+<li><p>作用</p>
+<p>用户通过验证后，登陆进程会给用户一个访问令牌，该令牌相当于用户访问系统资源的票证，当用户试图访问系统资源时，将访问令牌提供给 Windows NT，然后 Windows NT 检查用户试图访问对象上的访问控制列表。</p>
+<p>如果用户被允许访问该对象，Windows NT将会分配给用户适当的访问权限。 　</p>
+<p>访问令牌是用户在通过验证的时候有登陆进程所提供的，所以改变用户的权限需要注销后重新登陆，重新获取访问令牌</p>
+</li>
+</ul>
+<h3 id="Windows-Access-Token"><a href="#Windows-Access-Token" class="headerlink" title="Windows Access Token"></a>Windows Access Token</h3><blockquote>
+<p>Windows Token其实叫Access Token(访问令牌)，它是一个描 述进程或者线程安全上下文的一个对象</p>
+</blockquote>
+<ul>
+<li><p>产生过程</p>
+<blockquote>
+<p>每个进程创建时都会根据登录会话权限由LSA(Local Security Authority)分配⼀个Token(如果CreaetProcess时⾃⼰ 指定了 Token, LSA会⽤该Token， 否则就⽤⽗进程Token的⼀份拷贝</p>
+</blockquote>
+</li>
+<li><p><a href="https://www.anquanke.com/post/id/204721" target="_blank" rel="noopener">令牌模拟</a></p>
+</li>
+</ul>
+<h3 id="Hash"><a href="#Hash" class="headerlink" title="Hash"></a>Hash</h3><blockquote>
+<p>Windows系统为了保证⽤户明⽂密码不会被泄漏，将明⽂密码转换为Hash值进⾏⾝份验证，被保存在SAM或 ntds.dit中。</p>
+</blockquote>
+<ul>
+<li><p>背景</p>
+<ul>
+<li>LM Hash，在早期的Windows操作系统中将明⽂密码转换为 LM Hash 保存在 SAM ⽂件中，因为LM Hash使⽤ <strong>DES加密</strong>，密钥为硬编码，算法又存在缺陷，所以被废弃，为了保证系统兼容性可以⾃⾏开启</li>
+<li>NTLM Hash，在LM Hash算法被弃⽤时，NTLM Hash被⽤来进⾏Windows本地及远程⾝份验证的凭据，长度 为32bit、由数字和字母组成</li>
+</ul>
+</li>
+<li><p>组成</p>
+<blockquote>
+<p>冒号前半段为LM Hash，冒号后半段为NTLM Hash </p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42</span><br></pre></td></tr></table></figure>
+
+<p>net-NTLM Hash</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin::N46iSNekpT:08ca45b7d7ea58ee:88dcbe4446168966a153a0064958dac6:5c7830315c7830310000000000000b45c67103d07d7b95acd12ffa11230e0000000052920b85f78d013c31cdb3b92f5d765c783030</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Hash 计算</p>
+<ul>
+<li><p>LM Hash</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">admin1-ADMIN1(将密码转换为⼤写字⺟ ) </span><br><span class="line"></span><br><span class="line">ADMIN1-41444d494e31(16进制转换) </span><br><span class="line"></span><br><span class="line">41444d494e31-41444d494e310000000000000000(密码未到7位，在末尾补0，填充为14个字符，补16个0) </span><br><span class="line"></span><br><span class="line">41444d494e3100 00000000000000(分为两组，各转换为2进制) </span><br><span class="line"></span><br><span class="line">1000001010001000100110101001001010011100011000100000000(⻓度不⾜56bit，左侧补0) </span><br><span class="line">01000001010001000100110101001001010011100011000100000000(再分为7bit⼀组，后加0) </span><br><span class="line"></span><br><span class="line">0100000 0 </span><br><span class="line">1010001 0 </span><br><span class="line">0001001 0 </span><br><span class="line">1010100 0 </span><br><span class="line">1001010 0 </span><br><span class="line">0111000 0 </span><br><span class="line">1100010 0 </span><br><span class="line">0000000 0</span><br><span class="line"></span><br><span class="line">0100000010100010000100101010100010010100011100001100010000000000-40A212A89470C400（转换为16进 制）</span><br><span class="line"></span><br><span class="line">0000000000000000 </span><br><span class="line"></span><br><span class="line">将上⾯两组数字des加密</span><br><span class="line">KGS!@#$%-4b47532140232425(KGS!@#$%为LM Hash加密时DES加密的硬编码，转换为16进制) </span><br><span class="line"></span><br><span class="line">6C734076E7B827BFAAD3B435B51404EE(将两组des加密后的密⽂组合，得到LM Hash)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注：如果密码不超过7字节，后⾯的⼀半是固定的，都为0，安全性降低，所以被弃⽤</p>
+</blockquote>
+</li>
+<li><p>NTLM Hash： </p>
+<ul>
+<li>hex(16进制编码) </li>
+<li>Unicode编码 </li>
+<li>md4加密</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">admin1-61646d696e31(将明⽂转换为16进制编码) </span><br><span class="line"></span><br><span class="line">61646d696e31-610064006d0069006e003100(ASCII转Unicode)</span><br><span class="line"></span><br><span class="line">610064006d0069006e003100-74561893ea1e32f1fab1691c56f6c7a5(md4加密得到NTLM Hash)</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="获取-Hash"><a href="#获取-Hash" class="headerlink" title="获取 Hash"></a>获取 Hash</h4><ul>
+<li>使⽤卷影副本将SAM⽂件导出，配合SYSKEY利⽤ mimikatz 等⼯具获得 NTLM Hash </li>
+<li>使⽤ mimikatz 等⼯具读取lsass.exe进程，获取Hash</li>
+<li>配合其他漏洞和⼿法获取net-NTLM Hash </li>
+<li>net-NTLM Hash可以使⽤Responder或Inveigh等⼯具获取</li>
+</ul>
+<h4 id="破解-Hash"><a href="#破解-Hash" class="headerlink" title="破解 Hash"></a>破解 Hash</h4><ul>
+<li><p>LM Hash</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">john --format=lm hash.txt </span><br><span class="line">hashcat -m 3000 -a 3 hash.txt</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>NTLM Hash</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">john --format=nt hash.txt </span><br><span class="line">hashcat -m 1000 -a 3 hash.txt</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Net-NTLM v1</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">john --format=netntlm hash.txt </span><br><span class="line">hashcat -m 5500 -a 3 hash.txt</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Net-NTLMv2 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">john --format=netntlmv2 hash.txt </span><br><span class="line">hashcat -m 5600 -a 3 hash.txt</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h2 id="认证协议"><a href="#认证协议" class="headerlink" title="认证协议"></a>认证协议</h2><h3 id="NTLM"><a href="#NTLM" class="headerlink" title="NTLM"></a>NTLM</h3><blockquote>
+<p>NTLM验证是一种Challenge/Response 验证机制，由三种消息组成:通常称为type 1(协商)，类型type 2(质询)和type 3(身份验证)。</p>
+</blockquote>
+<ul>
+<li><p>认证过程</p>
+<p><img src="https://p5.ssl.qhimg.com/t01652f775797dd2789.png" alt="img"></p>
+<ul>
+<li><p>用户登录客户端电脑</p>
+</li>
+<li><p>(type 1)客户端向服务器发送type 1(协商)消息,它主要包含客户端支持和服务器请求的功能列表。</p>
+</li>
+<li><p>(type 2)服务器用type 2消息(质询)进行响应，这包含服务器支持和同意的功能列表。但是，最重要的是，它包含服务器产生的<strong>Challenge</strong>。</p>
+</li>
+<li><p>(type 3)客户端用type 3消息(身份验证)回复质询。用户接收到步骤3中的challenge之后，使用用户hash与challenge进行加密运算得到response，将response,username,challeng发给服务器。消息中的response是最关键的部分，因为它们向服务器证明客户端用户已经知道帐户密码。</p>
+</li>
+<li><p>服务器拿到type 3之后，使用challenge和用户hash进行加密得到response2与type 3发来的response进行比较。</p>
+<p>如果用户hash是存储在域控里面的话，那么没有用户hash，也就没办法计算response2。也就没法验证，这个时候用户服务器就会通过netlogon协议联系域控，建立一个安全通道,然后将type 1,type 2，type3 全部发给域控(这个过程也叫作Pass Through Authentication认证流程)</p>
+</li>
+<li><p>域控使用challenge和用户hash进行加密得到response2，与type 3的response进行比较</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="Kerberos"><a href="#Kerberos" class="headerlink" title="Kerberos"></a>Kerberos</h3><blockquote>
+<p>Kerberos是⼀种⽹络认证协议，对个⼈通信以安全的⼿段进⾏⾝份认证。</p>
+<p>其设计⽬标是通过密钥系统为客户机/服务器应⽤程序提供强⼤的认证服务。 </p>
+<p>它允许某实体在⾮安全⽹络环境下通信，向另⼀个实体以⼀种安全的⽅式证明⾃⼰的⾝份。该认证过程的实现不依赖于主机操作系统的认证，⽆需基于主机地址的信任，不要求⽹络上所有主机的物理安全，并假定⽹络上传送的数据包可以被任意地读取、修改和插⼊数据。</p>
+<p>在以上情况下， Kerberos 作为 ⼀ 种可信任的<strong>第三⽅认证服务</strong>，是通过传统的密码技术(如:共享密钥)执⾏认证服务的</p>
+</blockquote>
+<p><a href="https://blog.csdn.net/wulantian/article/details/42418231" target="_blank" rel="noopener">Forward from link</a></p>
+<h4 id="认证过程详解"><a href="#认证过程详解" class="headerlink" title="认证过程详解"></a>认证过程详解</h4><h5 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h5><p>Authentication解决的是“如何证明某个人确确实实就是他或她所声称的那个人”的问题。对于如何进行Authentication，我们采用这样的方法：如果一个秘密（secret）仅仅存在于A和B，那么有个人对B声称自己就是A，B通过让A提供这个秘密来证明这个人就是他或她所声称的A。这个过程实际上涉及到3个重要的关于Authentication的方面：</p>
+<ul>
+<li>Secret如何表示。</li>
+<li>A如何向B提供Secret。</li>
+<li>B如何识别Secret。</li>
+</ul>
+<p>基于这3个方面，我们把Kerberos Authentication进行最大限度的简化：整个过程涉及到Client和Server，他们之间的这个Secret我们用一个Key（KServer-Client）来表示。Client为了让Server对自己进行有效的认证，向对方提供如下两组信息：</p>
+<ul>
+<li>代表Client自身Identity的信息，为了简便，它以明文的形式传递。</li>
+<li>将Client的Identity使用 KServer-Client 作为Public Key、并采用<strong>对称加密算法</strong>进行加密。</li>
+</ul>
+<p>由于KServer-Client仅仅被Client和Server知晓，所以被Client使用KServer-Client加密过的Client Identity只能被Client和Server解密。</p>
+<p>同理，Server接收到Client传送的这两组信息，先通过对后者进行解密，随后将机密的数据同明文Identity进行比较，如果完全一样，则可以证明Client能过提供正确的 KServer-Client，而这个世界上，仅仅只有真正的Client和自己知道 KServer-Client，所以可以对方就是他所声称的那个人。</p>
+<p><img src="http://www.cnblogs.com/images/cnblogs_com/artech/kerberos_01_01.jpg" alt="img"><br>Keberos大体上就是按照这样的一个原理来进行Authentication的。</p>
+<p>两个基本概念</p>
+<ul>
+<li><p>Long-term Key/Master Key</p>
+<p>在Security的领域中，有的Key可能长期内保持不变，比如你在密码，可能几年都不曾改变，这样的Key、以及由此派生的Key被称为Long-term Key。</p>
+<p>对于Long-term Key的使用有这样的原则：被Long-term Key加密的数据不应该在网络上传输。</p>
+<p>原因很简单，一旦这些被Long-term Key加密的数据包被恶意的网络监听者截获，在原则上，只要有充足的时间，他是可以通过计算获得你用于加密的Long-term Key的——任何加密算法都不可能做到绝对保密。</p>
+<p>在一般情况下，对于一个Account来说，密码往往仅仅限于该Account的所有者知晓，甚至对于任何Domain的Administrator，密码仍然应该是保密的。但是密码却又是证明身份的凭据，所以必须通过基于你密码的派生的信息来证明用户的真实身份，在这种情况下，一般将你的密码进行Hash运算得到一个Hash code, 我们一般管这样的Hash Code叫做Master Key。由于Hash Algorithm是不可逆的，同时保证密码和Master Key是一一对应的，这样既保证了你密码的保密性，有同时保证你的Master Key和密码本身在证明你身份的时候具有相同的效力。</p>
+</li>
+<li><p>Short-term Key/Session Key</p>
+<p>由于被Long-term Key加密的数据包不能用于网络传送，所以我们使用另一种Short-term Key来加密需要进行网络传输的数据。</p>
+<p>由于这种Key只在一段时间内有效，即使被加密的数据包被黑客截获，等他把Key计算出来的时候，这个Key早就已经过期了。</p>
+</li>
+</ul>
+<h5 id="引入Key-Distribution"><a href="#引入Key-Distribution" class="headerlink" title="引入Key Distribution"></a>引入Key Distribution</h5><p>上面我们讨论了Kerberos Authentication的基本原理：通过让被认证的一方提供一个仅限于他和认证方知晓的Key来鉴定对方的真实身份。而被这个Key加密的数据包需要在Client和Server之间传送，所以这个Key不能是一个<strong>Long-term Key</strong>，而只可能是<strong>Short-term Key</strong>，这个可以仅仅在Client和Server的一个Session中有效，所以我们称这个Key为Client和Server之间的 Session Key（<strong>SServer-Client</strong>）。</p>
+<p><strong>Kerberos Distribution Center-KDC</strong>。KDC在整个Kerberos Authentication中作为Client和Server共同信任的第三方起着重要的作用，而Kerberos的认证过程就是通过这3方协作完成。顺便说一下，Kerberos起源于希腊神话，是一支守护着冥界长着3个头颅的神犬，在keberos Authentication中，Kerberos的3个头颅代表中认证过程中涉及的3方：<strong>Client、Server和KDC</strong>。</p>
+<p>对于一个Windows Domain来说，<strong>Domain Controller</strong>扮演着KDC的角色。KDC维护着一个存储着该Domain中所有帐户的<strong>Account Database</strong>（一般地，这个Account Database由<strong>AD</strong>来维护），也就是说，他知道属于每个Account的名称和派生于该Account Password的<strong>Master Key</strong>。而用于Client和Server相互认证的<strong>SServer-Client</strong>就是由KDC分发。下面我们来看看KDC分发<strong>SServer-Client</strong>的过程。</p>
+<p>KDC分发SServer-Client的简单的过程</p>
+<ul>
+<li><p>首先Client向KDC发送一个对SServer-Client的申请。这个申请的内容可以简单概括为“<strong>我是某个Client，我需要一个Session Key用于访问某个Server</strong> ”。</p>
+</li>
+<li><p>KDC在接收到这个请求的时候，生成一个Session Key，为了保证这个Session Key仅仅限于发送请求的Client和他希望访问的Server知晓，KDC会为这个Session Key生成两个Copy，分别被Client和Server使用。然后从Account database中提取Client和Server的Master Key分别对这两个Copy进行对称加密。对于后者，和Session Key一起被加密的还包含关于Client的一些信息。</p>
+</li>
+</ul>
+<blockquote>
+<p>KDC现在有了两个分别被Client和Server 的Master Key加密过的Session Key，这两个Session Key如何分别被Client和Server获得呢？也许你 马上会说，KDC直接将这两个加密过的包发送给Client和Server不就可以了吗，但是如果这样做，对于Server来说会出现下面 两个问题：</p>
+<ul>
+<li>由于一个Server会面对若干不同的Client, 而每个Client都具有一个不同的Session Key。那么Server就会为所有的Client维护这样一个Session Key的列表，这样做对于Server来说是比较麻烦而低效的。</li>
+<li>由于网络传输的不确定性，可能出现这样一种情况：Client很快获得Session Key，并将这个Session Key作为Credential随同访问请求发送到Server，但是用于Server的Session Key确还没有收到，并且很有可能承载这个Session Key的永远也到不了Server端，Client将永远得不到认证。</li>
+</ul>
+</blockquote>
+<ul>
+<li><p>为了解决这个问题，Kerberos的做法很简单，将这两个被加密的Copy一并发送给Client，属于Server的那份由Client发送给Server。</p>
+<p><img src="http://www.cnblogs.com/images/cnblogs_com/artech/kerberos_01_02.jpg" alt="img"></p>
+</li>
+</ul>
+<blockquote>
+<p>KDC并没有真正去认证这个发送请求的Client是否真的就是那个他所声称的那个人，就把Session Key发送给他，会不会有什么问题？</p>
+<p>如果另一个人（比如Client B）声称自己是Client A，他同样会得到Client A和Server的Session Key，这会不会有什么问题？</p>
+<p>实际上不存在问题，因为Client B声称自己是Client A，KDC就会使用Client A的Password派生的Master Key对Session Key进行加密，所以真正知道Client A 的Password的一方才会通过解密获得Session Key。 </p>
+</blockquote>
+<h5 id="引入Authenticator-为有效的证明自己提供证据"><a href="#引入Authenticator-为有效的证明自己提供证据" class="headerlink" title="引入Authenticator - 为有效的证明自己提供证据"></a>引入Authenticator - 为有效的证明自己提供证据</h5><p>通过上面的过程，Client实际上获得了两组信息：一个通过自己Master Key加密的Session Key，另一个被Sever的Master Key加密的数据包，包含Session Key和关于自己的一些确认信息。</p>
+<p>只要通过一个双方知晓的Key就可以对对方进行有效的认证，但是在一个网络的环境中，这种简单的做法是具有安全漏洞，为此,Client需要提供更多的证明信息，我们把这种证明信息称为<strong>Authenticator</strong>，在Kerberos的Authenticator实际上就是<strong>关于Client的一些信息</strong>和当前时间的一个<strong>Timestamp</strong>（关于这个安全漏洞和Timestamp的作用，将在后面解释）</p>
+<p>Server对Client进行认证过程：</p>
+<ul>
+<li><p>Client通过<strong>自己的Master Key</strong>对KDC加密的Session Key进行解密从而获得<strong>Session Key</strong>，随后创建<strong>Authenticator（Client Info + Timestamp）</strong>并用<strong>Session Key</strong>对其加密。</p>
+<p>最后连同从KDC获得的、被<strong>Server的Master Key</strong>加密过的数据包（<strong>Client Info + Session Key</strong>）一并发送到Server端。</p>
+<blockquote>
+<p>通过Server的Master Key加密过的数据包称为<strong>Session Ticket</strong>。</p>
+</blockquote>
+</li>
+<li><p>当Server接收到这两组数据后，先使用他<strong>自己的Master Key</strong>对Session Ticket进行解密，从而获得<strong>Session Key</strong>。</p>
+<p>随后使用该<strong>Session Key</strong>解密<strong>Authenticator</strong>，通过比较<strong>Authenticator中的Client Info</strong>和<strong>Session Ticket中的Client Info</strong>从而实现对Client的认证。</p>
+</li>
+</ul>
+<p><img src="http://www.cnblogs.com/images/cnblogs_com/artech/kerberos_01_03.jpg" alt="img"><br>TIPS:</p>
+<ul>
+<li><p><strong>为什么要使用Timestamp？</strong></p>
+<p>到这里，很多人可能认为这样的认证过程天衣无缝：只有当Client提供正确的Session Key方能得到Server的认证。但是在现实环境中，这存在很大的安全漏洞。</p>
+<p>我们试想这样的现象：Client向Server发送的数据包被某个恶意网络监听者截获，该监听者随后将数据包座位自己的Credential冒充该Client对Server进行访问，在这种情况下，依然可以很顺利地获得Server的成功认证。为了解决这个问题，Client在<strong>Authenticator</strong>中会加入一个当前时间的<strong>Timestamp</strong>。</p>
+<p>在Server对Authenticator中的Client Info和Session Ticket中的Client Info进行比较之前，会先提取Authenticator中的<strong>Timestamp</strong>，并同<strong>当前的时间</strong>进行比较，如果他们之间的偏差超出一个可以<strong>接受的时间范围（一般是5mins），</strong>Server会直接拒绝该Client的请求。</p>
+<p>在这里需要知道的是，Server维护着一个列表，这个列表记录着在这个可接受的时间范围内所有进行认证的Client和认证的时间。对于时间偏差在这个可接受的范围中的Client，Server会从这个这个列表中获得<strong>最近一个该Client的认证时间</strong>，只有当<strong>Authenticator中的Timestamp晚于通过一个Client的最近的认证时间</strong>的情况下，Server采用进行后续的认证流程。</p>
+</li>
+<li><p><strong>Time Synchronization的重要性</strong></p>
+<p>上述 基于Timestamp的认证机制只有在Client和Server端的时间保持同步的情况才有意义。所以保持Time Synchronization在整个认证过程中显得尤为重要。在一个Domain中，一般通过访问同一个<strong>Time Service</strong>获得当前时间的方式来实现时间的同步。</p>
+</li>
+<li><p><strong>双向认证（Mutual Authentication）</strong></p>
+<p>Kerberos 一个重要的优势在于它能够提供双向认证：<strong>不但Server可以对Client 进行认证，Client也能对Server进行认证</strong>。</p>
+<p>认证过程</p>
+<ul>
+<li>如果Client需要对他访问的Server进行认证，会在它向Server发送的Credential中设置一个是否需要认证的Flag。</li>
+<li>Server在对Client认证成功之后，会把Authenticator中的Timestamp提出出来，通过Session Key进行加密，当Client接收到并使用Session Key进行解密之后，如果确认<strong>Timestamp</strong>和原来的完全一致，那么他可以认定Server正式他试图访问的Server。</li>
+</ul>
+<blockquote>
+<p>那么为什么Server不直接把通过Session Key进行加密的Authenticator<strong>原样</strong>发送给Client，而要把Timestamp提取出来加密发送给Client呢？</p>
+<p>原因在于防止恶意的监听者通过获取的Client发送的Authenticator冒充Server获得Client的认证。</p>
+</blockquote>
+</li>
+</ul>
+<h5 id="引入Ticket-Granting-Service"><a href="#引入Ticket-Granting-Service" class="headerlink" title="引入Ticket Granting  Service"></a>引入Ticket Granting  Service</h5><p>Kerberos实际上一个基于<strong>Ticket</strong>的认证方式。Client想要获取Server端的资源，先得通过Server的认证；而认证的先决条件是Client向Server提供从KDC获得的一个有<strong>Server的Master Key</strong>进行加密的<strong>Session Ticket（Session Key + Client Info）</strong>。</p>
+<p>可以这么说，Session Ticket是Client进入Server领域的一张门票。而这张门票必须从一个合法的Ticket颁发机构获得，这个颁发机构就是<strong>Client和Server双方信任的KDC</strong>， 同时这张Ticket具有超强的防伪标识：它是被Server的Master Key加密的。对Client来说， 获得Session Ticket是整个认证过程中最为关键的部分。</p>
+<p>Client在从KDC那边获得Ticket之前，需要先获得这个Ticket 的 <strong>TGT：Ticket Granting Ticket</strong>，TGT的分发方仍然是KDC。</p>
+<p>Client是如何从KDC处获得TGT的过程</p>
+<ul>
+<li><p>首先Client向KDC发起对TGT的申请，申请的内容大致可以这样表示：“<strong>我需要一张TGT用以申请获取用以访问所有Server的Ticket</strong>”。</p>
+</li>
+<li><p>KDC在收到该申请请求后，生成一个用于该Client和KDC进行安全通信的<strong>Session Key（SKDC-Client）</strong>。</p>
+<p>为了保证该Session Key仅供该Client和自己使用，KDC使用<strong>Client的Master Key</strong>和<strong>自己的Master Key</strong>对生成的Session Key进行加密，从而获得两个加密的<strong>SKDC-Client</strong>的Copy。对于后者，随<strong><em>\</em>S\</strong>KDC-Client**一起被加密的还包含以后用于鉴定Client身份的关于Client的一些信息。</p>
+<p>最后KDC将这两份Copy一并发送给Client。</p>
+<blockquote>
+<p>为了免去KDC对于基于不同Client的Session Key进行维护的麻烦，就像Server不会保存<strong>Session Key（SServer-Client）</strong>一样，KDC也不会去保存这个Session Key（<strong>KDC-Client</strong>），而选择完全靠Client自己提供的方式。</p>
+</blockquote>
+</li>
+</ul>
+<p><img src="http://www.cnblogs.com/images/cnblogs_com/artech/kerberos_01_07.gif" alt="img"></p>
+<ul>
+<li><p>当Client收到KDC的两个加密数据包之后，先使用<strong>自己的Master Key</strong>对第一个Copy进行解密，从而获得KDC和Client的<strong>Session Key（\</strong>S*<em>KDC-Client）*</em>，并把该Session 和TGT进行缓存。</p>
+<blockquote>
+<p>有了Session Key和TGT，Client自己的Master Key将不再需要，因为此后Client可以使用<strong>SKDC-Client</strong>向KDC申请用以访问每个Server的Ticket</p>
+<p>相对于Client的Master Key这个Long-term Key，SKDC-Client是一个Short-term Key，安全保证得到更好的保障，这也是Kerberos多了这一步的关键所在。</p>
+<p>同时需要注意的是SKDC-Client是一个Session Key，他具有自己的生命周期，同时TGT和Session相互关联，当Session Key过期，TGT也就宣告失效，此后Client不得不重新向KDC申请新的TGT，KDC将会生成一个不同Session Key和与之关联的TGT。</p>
+<p>同时，由于Client Log off也导致SKDC-Client的失效，所以SKDC-Client又被称为<strong>Logon Session Key</strong>。</p>
+<p>TGT：被 KDC master key 加密过的 SKDC-Client + Client Info</p>
+</blockquote>
+</li>
+</ul>
+<p>Client 用 TGT 来从KDC获得基于某个Server的Ticket的过程：</p>
+<ul>
+<li><p>Client在获得自己和KDC的 <strong>Session Key（SKDC-Client）</strong> 之后，生成自己的Authenticator以及所要访问的Server名称的并使用 <strong>SKDC-Client</strong> 进行加密。随后连同TGT一并发送给KDC。</p>
+</li>
+<li><p>KDC使用<strong>自己的Master Key</strong>对 TGT 进行解密，提取 Client Info 和<strong>Session Key（SKDC-Client）</strong> ，再使用这个<strong>SKDC-Client</strong>解密Authenticator获得Client Info，对两个Client Info进行比较进而验证对方的真实身份。</p>
+<p>验证成功，生成一份基于Client所要访问的Server的Ticket给Client，这个过程就是我们第二节中介绍的一样了。 </p>
+<blockquote>
+<p>Ticket是基于某个具体的Server的，而TGT则是和具体的Server无关的，Client可以使用一个TGT从KDC获得基于不同Server的Ticket</p>
+</blockquote>
+</li>
+</ul>
+<p><img src="http://www.cnblogs.com/images/cnblogs_com/artech/kerberos_01_05.gif" alt="img"></p>
+<h5 id="Kerberos的3个Sub-protocol：整个Authentication"><a href="#Kerberos的3个Sub-protocol：整个Authentication" class="headerlink" title="Kerberos的3个Sub-protocol：整个Authentication"></a>Kerberos的3个Sub-protocol：整个Authentication</h5><ul>
+<li><p>相关概念</p>
+<ul>
+<li>AS：Authentication Server 认证服务器 </li>
+<li>KDC：Key Distribution Center 密钥分发中心</li>
+<li>TGT：Ticket Granting Ticket  票据授权票据，票据的票据 </li>
+<li>TGS：Ticket Granting Server  票据授权服务器</li>
+</ul>
+</li>
+<li><p>子过程</p>
+<ul>
+<li><p>Client向KDC申请TGT（Ticket Granting Ticket）</p>
+</li>
+<li><p>Client通过获得TGT向DKC申请用于访问Server的Ticket</p>
+</li>
+<li><p>Client最终向为了Server对自己的认证向其提交Ticket</p>
+</li>
+</ul>
+</li>
+<li><p>子协议</p>
+<blockquote>
+<p>这个3个Sub-Protocol分别完成上面列出的3个子过程</p>
+</blockquote>
+<ul>
+<li>Authentication Service Exchange</li>
+<li>Ticket Granting Service Exchange</li>
+<li>Client/Server Exchange</li>
+</ul>
+<p>Sub-protocol所进行Message Exchange：</p>
+<p><img src="http://www.cnblogs.com/images/cnblogs_com/artech/kerberos_01_06.gif" alt="img"></p>
+</li>
+<li><p>Authentication Service Exchange</p>
+<blockquote>
+<p>通过这个Sub-protocol，KDC（确切地说是KDC中的Authentication Service）实现对Client身份的确认，并颁发给该Client一个TGT</p>
+</blockquote>
+<p>过程：</p>
+<ul>
+<li><p>Client向KDC的Authentication Service发送Authentication Service Request（<strong>KRB_AS_REQ</strong>）, 为了确保KRB_AS_REQ仅限于自己和KDC知道，Client使用自己的Master Key对KRB_AS_REQ的主体部分进行加密（KDC可以通过Domain 的Account Database获得该Client的Master Key）。 </p>
+<blockquote>
+<p>KRB_AS_REQ的大体包含以下的内容：</p>
+<ul>
+<li><p>Pre-authentication data：</p>
+<p>包含用以证明自己身份的信息。</p>
+<p>说白了，就是证明自己知道自己声称的那个account的Password。</p>
+<p>一般地，它的内容是一个被Client的Master key加密过的Timestamp。</p>
+</li>
+<li><p>Client name &amp; realm: </p>
+<p>简单地说就是Domain name\Client</p>
+</li>
+<li><p>Server Name：</p>
+<p>注意这里的Server Name并不是Client真正要访问的Server的名称，而我们也说了TGT是和Server无关的（Client只能使用Ticket，而不是TGT去访问Server）。</p>
+<p>这里的Server Name实际上是<strong>KDC的Ticket Granting Service的Server Name</strong>。</p>
+</li>
+</ul>
+</blockquote>
+</li>
+<li><p>AS（Authentication Service）通过它接收到的KRB_AS_REQ验证发送方的是否是在Client name &amp; realm中声称的那个人，即要验证发送放是否知道Client的Password。</p>
+<p>所以AS只需从Account Database中提取Client对应的Master Key对Pre-authentication data进行解密，如果是一个合法的Timestamp，则可以证明发送放提供的是正确无误的密码。</p>
+<p>验证通过之后，AS将一份Authentication Service Response（KRB_AS_REP）发送给Client。</p>
+<p>KRB_AS_REQ主要包含两个部分：本Client的Master Key加密过的Session Key（SKDC-Client：Logon Session Key）和被自己（KDC）加密的TGT。 </p>
+<blockquote>
+<p>TGT大体又包含以下的内容：</p>
+<ul>
+<li>Session Key: SKDC-Client Logon Session Key</li>
+<li>Client name &amp; realm: 简单地说就是Domain name\Client</li>
+<li>End time: TGT到期的时间。</li>
+</ul>
+</blockquote>
+</li>
+<li><p>Client通过自己的Master Key对第一部分解密获得Session Key（SKDC-Client：Logon Session Key）之后，携带着TGT便可以进入下一步：TGS（Ticket Granting Service）Exchange。</p>
+</li>
+</ul>
+</li>
+<li><p>TGS（Ticket Granting Service）Exchange</p>
+<ul>
+<li><p>TGS（Ticket Granting Service）Exchange通过Client向KDC中的TGS（Ticket Granting Service）发送Ticket Granting Service Request（<strong>KRB_TGS_REQ</strong>）开始。</p>
+<blockquote>
+<p>KRB_TGS_REQ大体包含以下的内容：</p>
+<ul>
+<li>TGT：Client通过AS Exchange获得的Ticket Granting Ticket，TGT被KDC的Master Key进行加密</li>
+<li>Authenticator：用以证明当初TGT的拥有者是否就是自己，所以它必须以TGT的办法方和自己的Session Key（SKDC-Client：Logon Session Key）来进行加密。</li>
+<li>Client name &amp; realm: 简单地说就是Domain name\Client。</li>
+<li>Server name &amp; realm: 简单地说就是Domain name\Server，这回是Client试图访问的那个Server。</li>
+</ul>
+</blockquote>
+</li>
+<li><p>TGS收到KRB_TGS_REQ在发给Client真正的Ticket之前，先得证明 Client 提供的那个TGT是否是AS颁发给它的。</p>
+<p>于是它不得不通过Client提供的Authenticator来证明。但是Authentication是通过<strong>Logon Session Key（SKDC-Client）</strong>进行加密的，而自己并没有保存这个Session Key。所以TGS先得通过自己的Master Key对Client提供的TGT进行解密，从而获得这个Logon Session Key（SKDC-Client），再通过这个<strong>Logon Session Key（SKDC-Client）</strong> 解密Authenticator进行验证。</p>
+<p>验证通过向Clinet发送Ticket Granting Service Response（KRB_TGS_REP）。</p>
+<p>这个KRB_TGS_REP有两部分组成：使用<strong>Logon Session Key（SKDC-Client）</strong> 加密过的用于Client和Server的 <strong>Session Key（SServer-Client）</strong> 和使用 <strong>Server的Master Key</strong>进行加密的Ticket。</p>
+<blockquote>
+<p>该Ticket大体包含以下一些内容：</p>
+<ul>
+<li>Session Key：SServer-Client</li>
+<li>Client name &amp; realm: 简单地说就是Domain name\Client</li>
+<li>End time: Ticket的到期时间</li>
+</ul>
+</blockquote>
+</li>
+<li><p>Client收到KRB_TGS_REP，使用 <strong>Logon Session Key（SKDC-Client） **解密第一部分后获得</strong>Session Key（SServer-Client）**。</p>
+<blockquote>
+<p>有了Session Key和Ticket，Client就可以之间和Server进行交互，而无须在通过KDC作中间人了。所以我们说Kerberos是一种高效的认证方式，它可以直接通过Client和Server双方来完成，不像Windows NT 4下的NTLM认证方式，每次认证都要通过一个双方信任的第3方来完成。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>CS（Client/Server ）Exchange</p>
+<blockquote>
+<p>详细过程见第二点</p>
+</blockquote>
+<ul>
+<li><p>Client通过TGS Exchange获得Client和Server的<strong>Session Key（SServer-Client）</strong>，随后创建用于证明自己就是Ticket的真正所有者的Authenticator，并使用<strong>Session Key（SServer-Client）</strong>进行加密。最后将这个被加密过的Authenticator和Ticket作为Application Service Request（KRB_AP_REQ）发送给Server。</p>
+<p>除了上述两项内容之外，KRB_AP_REQ还包含一个Flag用于表示Client是否需要进行双向验证（Mutual Authentication）。</p>
+</li>
+<li><p>Server接收到KRB_AP_REQ之后，通过自己的Master Key解密Ticket，从而获得Session Key（SServer-Client）。通过Session Key（SServer-Client）解密Authenticator，进而验证对方的身份。验证成功，让Client访问需要访问的资源，否则直接拒绝对方的请求。</p>
+<p>对于需要进行双向验证，Server从Authenticator提取Timestamp，使用Session Key（SServer-Client）进行加密，并将其发送给Client用于Client验证Server的身份。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h5 id="User2User-Sub-Protocol：有效地保障Server的安全"><a href="#User2User-Sub-Protocol：有效地保障Server的安全" class="headerlink" title="User2User Sub-Protocol：有效地保障Server的安全"></a>User2User Sub-Protocol：有效地保障Server的安全</h5><p>通过3个Sub-protocol的介绍，可以全面地掌握整个Kerberos的认证过程。实际上，在Windows 2000时代，基于Kerberos的Windows Authentication就是按照这样的工作流程来进行的。</p>
+<p>但是基于3个Sub-protocol的Kerberos作为一种 Network Authentication 是具有它自己的局限和安全隐患的。<strong>以某个Entity的Long-term Key加密的数据不应该在网络中传递</strong>。原因很简单，所有的加密算法都不能保证100%的安全，对加密的数据进行解密只是一个时间的过程，最大限度地提供安全保障的做法就是：<strong>使用一个Short-term key（Session Key）代替Long-term Key对数据进行加密，使得恶意用户对其解密获得加密的Key时，该Key早已失效</strong>。</p>
+<p>但是对于3个Sub-Protocol的C/S Exchange，Client携带的Ticket却是被<strong>Server Master Key</strong>进行加密的，这显现不符合我们提出的原则，降低Server的安全系数。</p>
+<p>所以我们必须寻求一种解决方案来解决上面的问题。这个解决方案很明显：就是采用一个Short-term的Session Key，而不是Server Master Key对Ticket进行加密。Kerberos的第4个Sub-protocol：<strong>User2User Protocol</strong>。</p>
+<p>既然是Session Key，仅必然涉及到两方，而在Kerberos整个认证过程涉及到3方：Client、Server和KDC，所以用于加密Ticket的只可能是Server和KDC之间的 <strong>Session Key（SKDC-Server）</strong></p>
+<p>我们知道 Client通过在AS Exchange阶段获得的TGT从KDC那么获得访问Server的Ticket。原来的Ticket是通过<strong>Server的Master Key</strong>进行加密的，而这个Master Key可以通过Account Database获得。但是现在KDC需要使用Server和KDC之间的 <strong>SKDC-Server</strong> 进行加密，而KDC是不会维护这个Session Key，所以<strong>这个Session Key只能靠申请Ticket的Client提供</strong>。</p>
+<p>所以在AS Exchange和TGS Exchange之间，Client 还得对 Server 进行请求已获得Server和KDC之间的Session Key（<strong>SKDC-Server</strong>）。</p>
+<p>而对于Server来说，它可以像Client一样通过<strong>AS Exchange</strong>获得他和KDC之间的Session Key（<strong>SKDC-Server</strong>）和一个封装了这个Session Key并被<strong>KDC的Master Key进行加密的TGT</strong>，一旦获得这个TGT，Server会缓存它，以待Client对它的请求。我们现在来详细地讨论这一过程。</p>
+<p><img src="http://www.cnblogs.com/images/cnblogs_com/artech/kerberos_03_01.gif" alt="img"><br>过程：</p>
+<ul>
+<li><p>AS Exchange：</p>
+<p>Client通过此过程获得了属于自己的TGT，有了此TGT，Client可凭此向KDC申请用于访问某个Server的Ticket。</p>
+</li>
+<li><p>这一步的主要任务是获得封装了Server和KDC的Session Key（SKDC-Server）的属于Server的TGT。如果该TGT存在于Server的缓存中，则Server会直接将其返回给Client。否则通过AS Exchange从KDC获取。</p>
+</li>
+<li><p>TGS Exchange：</p>
+<p>Client通过向KDC提供自己的TGT，Server的TGT以及Authenticator向KDC申请用于访问Server的Ticket。</p>
+<p>KDC使用先用自己的Master Key解密Client的TGT获得SKDC-Client，通过SKDC-Client解密Authenticator验证发送者是否是TGT的真正拥有者，验证通过再用自己的Master Key解密Server的TGT获得KDC和Server 的Session Key（SKDC-Server），并用该Session Key加密Ticket返回给Client。</p>
+</li>
+<li><p>C/S Exchange：</p>
+<p>Client携带者通过KDC和Server 的Session Key（SKDC-Server）进行加密的Ticket和通过Client和Server的Session Key（SServer-Client）的Authenticator访问Server，Server通过SKDC-Server解密Ticket获得SServer-Client，通过SServer-Client解密Authenticator实现对Client的验证。</p>
+</li>
+</ul>
+<h4 id="Kerberos的优点"><a href="#Kerberos的优点" class="headerlink" title="Kerberos的优点"></a>Kerberos的优点</h4><ul>
+<li><p>较高的Performance（性能）</p>
+<p>虽然我们一再地说Kerberos是一个涉及到3方的认证过程：Client、Server、KDC。</p>
+<p>但是一旦Client获得用过访问某个Server的Ticket，该Server就能根据这个Ticket实现对Client的验证，而无须KDC的再次参与。</p>
+<p>和传统的基于Windows NT 4.0的每个完全依赖Trusted Third Party的NTLM比较，具有较大的性能提升。</p>
+</li>
+<li><p>实现了双向验证（Mutual Authentication）</p>
+<p>传统的NTLM认证基于这样一个前提：Client访问的远程的Service是可信的、无需对于进行验证，所以NTLM不曾提供双向验证的功能。这显然有点理想主义，为此Kerberos弥补了这个不足：Client在访问Server的资源之前，可以要求对Server的身份执行认证。</p>
+</li>
+<li><p>对Delegation的支持</p>
+<p>Impersonation和Delegation是一个分布式环境中两个重要的功能。Impersonation允许Server在本地使用Logon 的Account执行某些操作，Delegation需用Server将logon的Account带入到另过一个Context执行相应的操作。NTLM仅对Impersonation提供支持，而Kerberos通过一种双向的、可传递的（Mutual 、Transitive）信任模式实现了对Delegation的支持。</p>
+</li>
+<li><p>互操作性（Interoperability）</p>
+<p>Kerberos最初由MIT首创，现在已经成为一行被广泛接受的标准。所以对于不同的平台可以进行广泛的互操作。</p>
+</li>
+</ul>
+<h3 id="SMB"><a href="#SMB" class="headerlink" title="SMB"></a>SMB</h3><blockquote>
+<p>SMB（ServerMessage Block）通信协议是微软（Microsoft）和英特尔(Intel)在1987年制定的协议，主要是作为Microsoft网络的通讯协议。</p>
+<p>SMB 是在会话层（session layer）和表示层（presentation layer）以及小部分应用层（application layer）的协议。</p>
+<p>SMB使用了NetBIOS的应用程序接口 （Application Program Interface，简称API），一般端口使用为139，445。</p>
+<p>另外，它是一个开放性的协议，允许了协议扩展——使得它变得更大而且复杂；大约有65个最上层的作业，而每个作业都超过120个函数，甚至Windows NT也没有全部支持到。</p>
+<p>随着Internet的流行，Microsoft希望将这个协议扩展到Internet上去，成为Internet上计算机之间相互共享数据的一种标准。因此它将原有的几乎没有多少技术文档的SMB协议进行整理，重新命名为CIFS（Common Internet File System），并打算将它与NetBIOS相脱离，试图使它成为Internet上的一个标准协议。</p>
+</blockquote>
+<ul>
+<li><p>功能</p>
+<p>SMB协议使用请求-响应模型或者客户端-服务器模型。</p>
+<p>使用SMB的客户端可以通过TCP / IP协议，IPX / SPX协议或NetBEUI协议连接到使用NetBIOS的服务器。一旦建立连接，客户端计算机或程序可以像访问本地计算机一样对服务器上的文件进行读取和写入。</p>
+</li>
+<li><p>SMB协议版本</p>
+<ul>
+<li><p>CIFS: SMB协议最老的版本。1996年在Windows NT 4.0中使用。</p>
+</li>
+<li><p>SMB 1.0 / SMB1: 在Windows 2000, WindowsXP, Windows Server 2003 和WindowsServer 2003 R2中使用。</p>
+</li>
+<li><p>SMB 2.0 / SMB2: 在Windows Vista和Windows Server 2008中使用。</p>
+</li>
+<li><p>SMB 2.1 / SMB2.1: 在Windows 7和Windows Server 2008 R2中使用。</p>
+</li>
+<li><p>SMB 3.0 / SMB3: 在Windows 8 and Windows Server 2012中使用。</p>
+</li>
+<li><p>SMB 3.02 / SMB3: 在Windows 8.1和Windows Server 2012 R2中使用。</p>
+</li>
+<li><p>SMB 3.1: 在 Windows Server 2016 和Windows 10中使用。</p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>目前，SMB最新的版本是SMB3.1.1，该版本在在Windows Server 2016 和Windows 10中使用。这个版本在SMB支持AES 128比特CCM模式加密的基础上，又支持AES 128比特GCM模式加密。并使用SHA-512哈希算法实现预认证完整性检查。当客户端使用SMB 2.x协议或者更高版本连接时，<strong>SMB3.1.1强制进行安全协商</strong>。</p>
+</blockquote>
+<ul>
+<li><p>SMB协议安全性</p>
+<blockquote>
+<p>SMB协议支持两个安全级别保护。</p>
+</blockquote>
+<ul>
+<li>共享级别保护，服务器在此级别受到保护，每个共享都有一个密码。客户端计算机或用户必须输入密码来访问特定共享下保存的数据或文件。</li>
+<li>用户级别保护，这是后来被添加到SMB协议中的。它适用于单个文件，每个共享均基于特定的用户访问权限。服务器对客户端进行身份验证后，客户端将获得唯一身份标识（UID）进而访问服务器。</li>
+</ul>
+</li>
+</ul>
+<h2 id="Windows-网络认证"><a href="#Windows-网络认证" class="headerlink" title="Windows 网络认证"></a>Windows 网络认证</h2><h3 id="工作组-1"><a href="#工作组-1" class="headerlink" title="工作组"></a>工作组</h3><blockquote>
+<p>⼯作组是指数台计算机在同⼀个内⽹中，在逻辑上都属于⼯作组，但是在⼯作组中的机器之间相互没有信任关系， 每台机器的账号密码只是保存在⾃⼰的SAM⽂件中。意味着如果需要共享资源只能新建⼀个账号并指定相关资源授予该账号权限才可以完成共享。</p>
+<p>早期利⽤SMB协议在内⽹中传输明⽂口令，后为了安全出现LM Challenge/Response 验证机制，再之后LM Challenge/Response 验证机制因为安全性问题，从Windows Vista / Server 2008开始LM就被弃⽤，改⽤Windows NT挑战/响应验证机制，常被⼈称为NTLM，现在被更新到 NTLMv2</p>
+</blockquote>
+<blockquote>
+<p>参考</p>
+<p><a href="https://blog.csdn.net/wulantian/article/details/42418231" target="_blank" rel="noopener">https://blog.csdn.net/wulantian/article/details/42418231</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/96095908" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/96095908</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/95664193" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/95664193</a></p>
+<p><a href="https://www.cnblogs.com/-mo-/p/11906772.html" target="_blank" rel="noopener">https://www.cnblogs.com/-mo-/p/11906772.html</a></p>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="https://passenger-amao.github.io">AMao</a></p><p> <span>Link:  </span><a href="https://passenger-amao.github.io/2020/08/09/%E5%86%85%E7%BD%91%E5%AE%89%E5%85%A8%E5%9F%BA%E7%A1%80/">https://passenger-amao.github.io/2020/08/09/%E5%86%85%E7%BD%91%E5%AE%89%E5%85%A8%E5%9F%BA%E7%A1%80/</a></p><p> <span>Copyright:  </span><span>本站所有文章均采用 <a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际(CC BY-NC-SA 4.0)</a> 许可协议。转载请注明出处！</span></p></div><div class="post-paginator"><a class="nextSlogan" href="/2020/07/23/SQL%20%E6%B3%A8%E5%85%A5%E7%BB%95%20WAF%20%E6%80%9D%E8%B7%AF/" title="SQL注入过WAF思路"><span>NextPost ></span><br><span class="nextTitle">SQL注入过WAF思路</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo" target="_blank" rel="noopener"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#内网安全基础"><span class="toc-number">1.</span> <span class="toc-text">内网安全基础</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#网络环境"><span class="toc-number">1.1.</span> <span class="toc-text">网络环境</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#工作组"><span class="toc-number">1.1.1.</span> <span class="toc-text">工作组</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#域"><span class="toc-number">1.1.2.</span> <span class="toc-text">域</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#域控制器-DC"><span class="toc-number">1.1.3.</span> <span class="toc-text">域控制器 DC</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#域环境"><span class="toc-number">1.1.4.</span> <span class="toc-text">域环境</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#单域"><span class="toc-number">1.1.4.1.</span> <span class="toc-text">单域</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#父域-子域"><span class="toc-number">1.1.4.2.</span> <span class="toc-text">父域  子域</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#域树"><span class="toc-number">1.1.4.3.</span> <span class="toc-text">域树</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#域森林"><span class="toc-number">1.1.4.4.</span> <span class="toc-text">域森林</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#域名服务器"><span class="toc-number">1.1.5.</span> <span class="toc-text">域名服务器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#活动目录"><span class="toc-number">1.1.6.</span> <span class="toc-text">活动目录</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#攻击活动目录"><span class="toc-number">1.1.6.1.</span> <span class="toc-text">攻击活动目录</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AD-与-DC-的区别"><span class="toc-number">1.1.7.</span> <span class="toc-text">AD 与 DC 的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#域中计算机的分类"><span class="toc-number">1.1.8.</span> <span class="toc-text">域中计算机的分类</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#域控制器"><span class="toc-number">1.1.8.1.</span> <span class="toc-text">域控制器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#成员服务器"><span class="toc-number">1.1.8.2.</span> <span class="toc-text">成员服务器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#客户机"><span class="toc-number">1.1.8.3.</span> <span class="toc-text">客户机</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#独立服务器"><span class="toc-number">1.1.8.4.</span> <span class="toc-text">独立服务器</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#域内权限"><span class="toc-number">1.1.9.</span> <span class="toc-text">域内权限</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#组"><span class="toc-number">1.1.9.1.</span> <span class="toc-text">组</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#域本地组"><span class="toc-number">1.1.9.2.</span> <span class="toc-text">域本地组</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#全局组"><span class="toc-number">1.1.9.3.</span> <span class="toc-text">全局组</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#通用组"><span class="toc-number">1.1.9.4.</span> <span class="toc-text">通用组</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#A-G-DL-P策略"><span class="toc-number">1.1.9.5.</span> <span class="toc-text">A-G-DL-P策略</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#内置组"><span class="toc-number">1.1.9.6.</span> <span class="toc-text">内置组</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安全域"><span class="toc-number">1.1.10.</span> <span class="toc-text">安全域</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#DMZ"><span class="toc-number">1.1.10.1.</span> <span class="toc-text">DMZ</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#网络边界"><span class="toc-number">1.1.10.2.</span> <span class="toc-text">网络边界</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#访问控制策略"><span class="toc-number">1.1.10.3.</span> <span class="toc-text">访问控制策略</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#内网"><span class="toc-number">1.1.10.4.</span> <span class="toc-text">内网</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VPN"><span class="toc-number">1.1.11.</span> <span class="toc-text">VPN</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安全设备"><span class="toc-number">1.2.</span> <span class="toc-text">安全设备</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#堡垒机"><span class="toc-number">1.2.1.</span> <span class="toc-text">堡垒机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#防火墙"><span class="toc-number">1.2.2.</span> <span class="toc-text">防火墙</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#防火墙分类"><span class="toc-number">1.2.2.1.</span> <span class="toc-text">防火墙分类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#防火墙架构"><span class="toc-number">1.2.2.2.</span> <span class="toc-text">防火墙架构</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IDS"><span class="toc-number">1.2.3.</span> <span class="toc-text">IDS</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基于主机（系统）的-IDS"><span class="toc-number">1.2.3.1.</span> <span class="toc-text">基于主机（系统）的 IDS</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#基于网络的-IDS"><span class="toc-number">1.2.3.2.</span> <span class="toc-text">基于网络的 IDS</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#分布式IDS"><span class="toc-number">1.2.3.3.</span> <span class="toc-text">分布式IDS</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IPS"><span class="toc-number">1.2.4.</span> <span class="toc-text">IPS</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#主机入侵防御系统"><span class="toc-number">1.2.4.1.</span> <span class="toc-text">主机入侵防御系统</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#网络入侵防御系统"><span class="toc-number">1.2.4.2.</span> <span class="toc-text">网络入侵防御系统</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#应用入侵防护"><span class="toc-number">1.2.4.3.</span> <span class="toc-text">应用入侵防护</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#防火墙、IDS、IPS-的区别"><span class="toc-number">1.2.5.</span> <span class="toc-text">防火墙、IDS、IPS 的区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本概念"><span class="toc-number">1.3.</span> <span class="toc-text">基本概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SAM"><span class="toc-number">1.3.1.</span> <span class="toc-text">SAM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IPC"><span class="toc-number">1.3.2.</span> <span class="toc-text">IPC</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#IPC-1"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">IPC$</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NETBIOS"><span class="toc-number">1.3.3.</span> <span class="toc-text">NETBIOS</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#利用-NETBIOS-发现主机"><span class="toc-number">1.3.3.1.</span> <span class="toc-text">利用 NETBIOS 发现主机</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LLMNR"><span class="toc-number">1.3.4.</span> <span class="toc-text">LLMNR</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WMI"><span class="toc-number">1.3.5.</span> <span class="toc-text">WMI</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SID"><span class="toc-number">1.3.6.</span> <span class="toc-text">SID</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Windows-Access-Token"><span class="toc-number">1.3.7.</span> <span class="toc-text">Windows Access Token</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Hash"><span class="toc-number">1.3.8.</span> <span class="toc-text">Hash</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#获取-Hash"><span class="toc-number">1.3.8.1.</span> <span class="toc-text">获取 Hash</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#破解-Hash"><span class="toc-number">1.3.8.2.</span> <span class="toc-text">破解 Hash</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#认证协议"><span class="toc-number">1.4.</span> <span class="toc-text">认证协议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#NTLM"><span class="toc-number">1.4.1.</span> <span class="toc-text">NTLM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Kerberos"><span class="toc-number">1.4.2.</span> <span class="toc-text">Kerberos</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#认证过程详解"><span class="toc-number">1.4.2.1.</span> <span class="toc-text">认证过程详解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#基本原理"><span class="toc-number">1.4.2.1.1.</span> <span class="toc-text">基本原理</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#引入Key-Distribution"><span class="toc-number">1.4.2.1.2.</span> <span class="toc-text">引入Key Distribution</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#引入Authenticator-为有效的证明自己提供证据"><span class="toc-number">1.4.2.1.3.</span> <span class="toc-text">引入Authenticator - 为有效的证明自己提供证据</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#引入Ticket-Granting-Service"><span class="toc-number">1.4.2.1.4.</span> <span class="toc-text">引入Ticket Granting  Service</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Kerberos的3个Sub-protocol：整个Authentication"><span class="toc-number">1.4.2.1.5.</span> <span class="toc-text">Kerberos的3个Sub-protocol：整个Authentication</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#User2User-Sub-Protocol：有效地保障Server的安全"><span class="toc-number">1.4.2.1.6.</span> <span class="toc-text">User2User Sub-Protocol：有效地保障Server的安全</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Kerberos的优点"><span class="toc-number">1.4.2.2.</span> <span class="toc-text">Kerberos的优点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SMB"><span class="toc-number">1.4.3.</span> <span class="toc-text">SMB</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Windows-网络认证"><span class="toc-number">1.5.</span> <span class="toc-text">Windows 网络认证</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#工作组-1"><span class="toc-number">1.5.1.</span> <span class="toc-text">工作组</span></a></li></ol></li></ol></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i></body></html>
