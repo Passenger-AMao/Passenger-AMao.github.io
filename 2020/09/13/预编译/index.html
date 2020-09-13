@@ -1,0 +1,235 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="AMao"><meta name="renderer" content="webkit"><meta name="copyright" content="AMao"><meta name="keywords" content="AMao's Blog"><meta name="description" content=""><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>预编译与SQL注入 · AMao's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">AMao</div><div class="profile-signature">小菜鸡目前对一些东西的认知，希望师傅们可以帮忙纠正！</div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">AMao's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">预编译与SQL注入</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2020-09-13</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="Web安全"> Web安全</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="渗透测试"> 渗透测试</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="CTF"> CTF</a></span></div><div class="post-intro-read"><span> Word count: <span class="post-count">1.6k</span> | Reading time: <span class="post-count">6</span>min</span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><h3 id="预编译过程"><a href="#预编译过程" class="headerlink" title="预编译过程"></a>预编译过程</h3><ul>
+<li><p>开启MySQL日志功能</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看是否开启</span></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> show global variables like <span class="string">"%genera%"</span>;</span></span><br><span class="line">+------------------+----------------------------------------------------------+</span><br><span class="line">| Variable_name    | Value                                                    |</span><br><span class="line">+------------------+----------------------------------------------------------+</span><br><span class="line">| general_log      | OFF                                                      |</span><br><span class="line">| general_log_file | D:\MySQL5.7.26\data\AMao-Desktop.log                     |</span><br><span class="line">+------------------+----------------------------------------------------------+</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 开启日志功能</span></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> <span class="built_in">set</span> global general_log = on;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>执行简单预编译</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> prepare stmt_name from <span class="string">'select * from user where `name`=?'</span>;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">Statement prepared</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> <span class="built_in">set</span> @query_name=<span class="string">'allen'</span>;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> execute stmt_name using @query_name;</span></span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">| id | name  | gender | age | flag |</span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">|  1 | allen |      1 |  20 |    1 |</span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> <span class="built_in">set</span> @query_name2 = <span class="string">'joy'</span>;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> execute stmt_name using @query_name2;</span></span><br><span class="line">+----+------+--------+-----+------+</span><br><span class="line">| id | name | gender | age | flag |</span><br><span class="line">+----+------+--------+-----+------+</span><br><span class="line">|  6 | joy  |      1 |  21 |    1 |</span><br><span class="line">+----+------+--------+-----+------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>查看日志</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">    Argument</span><br><span class="line">Prepare	select * from user where `name`=?</span><br><span class="line">Query	set @query_name=&apos;allen&apos;</span><br><span class="line">Query	execute stmt_name using @query_name</span><br><span class="line">Execute	select * from user where `name`=&apos;allen&apos;</span><br><span class="line">Query	set @query_name2 = &apos;joy&apos;</span><br><span class="line">Query	execute stmt_name using @query_name2</span><br><span class="line">Execute	select * from user where `name`=&apos;joy&apos;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>对比正常请求过程</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"> select * from user where name = 'joy';</span><br><span class="line">+----+------+--------+-----+------+</span><br><span class="line">| id | name | gender | age | flag |</span><br><span class="line">+----+------+--------+-----+------+</span><br><span class="line">|  6 | joy  |      1 |  21 |    1 |</span><br><span class="line">+----+------+--------+-----+------+</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">    Argument</span><br><span class="line">Query    select * from user where name = &apos;joy&apos;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<blockquote>
+<ul>
+<li><p>普通SQL语句执行过程：</p>
+<p>在数据库接收到SQL语句后，首先对其进行语义解析，生成语法树，随后对SQL语句进行优化并制定执行计划并执行</p>
+</li>
+<li><p>预编译操作过程：</p>
+<p>在预编译过程中，数据库首先接收到带有预编译占位符的SQL语句，解析生成语法树(Lex)，并缓存在cache中，然后接收对应的参数信息，从cache中取出语法树设置参数，然后再进行优化和执行。</p>
+<p>由于参数信息传入前语法树就已生成，执行的语法结构也就无法因参数而改变，自然也就杜绝了SQL注入的出现。</p>
+</li>
+</ul>
+<p>TIPS：预编译可以实现一次编译、多次执行（程序将使用第一次存储于缓冲区的预编译后的模板进行解析），省去了解析优化等过程</p>
+</blockquote>
+<h3 id="预编译防止SQL注入的原理"><a href="#预编译防止SQL注入的原理" class="headerlink" title="预编译防止SQL注入的原理"></a>预编译防止SQL注入的原理</h3><ul>
+<li><p>预编译脚本</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">	$user = <span class="string">'root'</span>;</span><br><span class="line">	$pass = <span class="string">'root'</span>;</span><br><span class="line">	$name = $_GET[<span class="string">'name'</span>];</span><br><span class="line">    $dbh = <span class="keyword">new</span> PDO(<span class="string">'mysql:host=localhost;dbname=tt'</span>, $user, $pass);</span><br><span class="line">    <span class="comment">// 设置为预编译模式</span></span><br><span class="line">    $dbh-&gt;setAttribute(PDO::ATTR_EMULATE_PREPARES,<span class="keyword">false</span>);</span><br><span class="line">    $stmt = $dbh-&gt;prepare(<span class="string">"select * from user where name = :user_name"</span>);</span><br><span class="line">    $stmt-&gt;bindParam(<span class="string">':user_name'</span>,$name);</span><br><span class="line">    <span class="keyword">if</span>($stmt-&gt;execute())&#123;</span><br><span class="line">    	<span class="keyword">while</span> ($row = $stmt-&gt;fetch(PDO::FETCH_ASSOC)) &#123;</span><br><span class="line">    		print_r($row);</span><br><span class="line">    	&#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (PDOException $e) &#123;</span><br><span class="line">    <span class="keyword">print</span> <span class="string">"Error!: "</span> . $e-&gt;getMessage() . <span class="string">"&lt;br/&gt;"</span>;</span><br><span class="line">    <span class="keyword">die</span>();</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>?name=joy</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 日志</span><br><span class="line">Connect	      root@localhost on tt using TCP/IP</span><br><span class="line">Prepare	      select * from user where name = ?</span><br><span class="line">Execute       select * from user where name = &apos;joy&apos;</span><br><span class="line">Close stmt</span><br><span class="line">Quit</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>整个流程分为五步：连接、预编译、传入参数并执行、关闭预编译语句、退出</p>
+</blockquote>
+</li>
+<li><p><code>?name=joy%27and 1=1%23</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Connect	      root@localhost on tt using TCP/IP</span><br><span class="line">Prepare	      select * from user where name = ?</span><br><span class="line">Execute       select * from user where name = &apos;joy\&apos;and 1=1#&apos;</span><br><span class="line">Close stmt</span><br><span class="line">Quit</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>可以看到输入的 <code>&#39;</code> 被转义了，而在引号内的 <code>#</code> 并不会被解释成注释符</p>
+<p>由引号就想到了整型注入，进一步测试</p>
+</blockquote>
+</li>
+<li><p><code>?id=1 and 1=1#</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Prepare	select * from user where id = ?</span><br><span class="line">Execute	select * from user where id = &apos;1 and 1=1#&apos;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>查看日志发现，在执行的SQL语句中，变量位置还是加了引号，因为在MySQL存在一个弱类型转换，所以两者的插叙结果是一样的</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> select * from user <span class="built_in">where</span> id =1;</span></span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">| id | name  | gender | age | flag |</span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">|  1 | allen |      1 |  20 |    1 |</span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> select * from user <span class="built_in">where</span> id =<span class="string">'1'</span>;</span></span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">| id | name  | gender | age | flag |</span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">|  1 | allen |      1 |  20 |    1 |</span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> select * from user <span class="built_in">where</span> id =<span class="string">'1aaa'</span>;</span></span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">| id | name  | gender | age | flag |</span><br><span class="line">+----+-------+--------+-----+------+</span><br><span class="line">|  1 | allen |      1 |  20 |    1 |</span><br><span class="line">+----+-------+--------+-----+------+</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<blockquote>
+<p>输入的引被转义，联想到宽字节注入，在查阅资料得知，在PHP 5.3.6之前，PDO确实存在宽字节注入的问题</p>
+<p>上述预编译代码在 LNMP、MySQL 5.5.62、PHP 5.2.17 环境下下实测成功</p>
+</blockquote>
+<h3 id="模拟预编译"><a href="#模拟预编译" class="headerlink" title="模拟预编译"></a>模拟预编译</h3><blockquote>
+<p>模拟预编译是防止某些数据库不支持预编译而设置的(如sqllite与低版本mysql)</p>
+<p>如果模拟预处理开启，那么数据库客户端程序内部会模拟 mysql 数据库中的参数绑定这一过程，即程序会在内部模拟prepare的过程，当执行execute时，再将拼接后的完整SQL语句发送给mysql数据库执行</p>
+</blockquote>
+<ul>
+<li><p>测试</p>
+<blockquote>
+<p>PDO默认使用的是模拟预编译，只要注释掉上面的脚本里的</p>
+<p> <code>$dbh-&gt;setAttribute(PDO::ATTR_EMULATE_PREPARES,false);</code> </p>
+</blockquote>
+<p>日志信息和执行普通SQL语句一样</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Connect	root@localhost on tt using TCP/IP</span><br><span class="line">Query	select * from user where name = &apos;joy&apos;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<blockquote>
+<p>模拟预处理防止SQL注入的本质是在参数绑定过程中对参数值进行转义与过滤，这一点与真正的sql数据库预处理是不一样的</p>
+</blockquote>
+<ul>
+<li><p>常见接口的预编译方式</p>
+<table>
+<thead>
+<tr>
+<th align="center">接口</th>
+<th align="center">默认预编译方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">Python-MySQLdb</td>
+<td align="center">模拟预编译</td>
+</tr>
+<tr>
+<td align="center">Python-Pymysql</td>
+<td align="center">模拟预编译</td>
+</tr>
+<tr>
+<td align="center">Python-Oursql</td>
+<td align="center">预编译</td>
+</tr>
+<tr>
+<td align="center">PHP-Mysqli</td>
+<td align="center">预编译</td>
+</tr>
+<tr>
+<td align="center">PHP-PDO</td>
+<td align="center">模拟预编译</td>
+</tr>
+<tr>
+<td align="center">JAVA-PreparedStatement</td>
+<td align="center">模拟预编译</td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+<h3 id="预编译中的转义"><a href="#预编译中的转义" class="headerlink" title="预编译中的转义"></a>预编译中的转义</h3><blockquote>
+<p>通过上面查看日志可以发现，使用预编译后，会对一些特殊字符进行转义，而这个转义实在后端的接口进行还是数据库进行的？</p>
+<p>这里尝试阅读pdo的源码，PHP的扩展都是基于C语言，太菜了看起来很费劲，于是通过流量分析来验证：通过流量分析发现Mysql服务器收到的数据包是没有经过转义，即转义操作是在MySQL数据库进行的</p>
+</blockquote>
+<h3 id="预编译中的注入思路"><a href="#预编译中的注入思路" class="headerlink" title="预编译中的注入思路"></a>预编译中的注入思路</h3><ol>
+<li>白盒审计中PDO、PreparedStatement中开发者直接拼接SQL语句的行为</li>
+<li>白盒审计中ORDER BY后的字段名动态传入的SQL语句；渗透测试中允许用户传入按某个字段进行排序的行为，这很有可能是直接拼接的。</li>
+<li>白盒审计中ORDER BY后排序方式(ASC/DESC)动态传入的SQL语句；渗透测试中允许用户选择正序倒序排列的行为，需要抓包查看是否直接传入ASC/DESC，若是则很有可能存在拼接行为。</li>
+<li>白盒审计中模糊查询是否拼接；渗透测试中针对搜索行为进行SQL注入测试。</li>
+<li>白盒审计中IN语句后是否拼接。</li>
+</ol>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a href="https://xz.aliyun.com/t/7132#toc-5" target="_blank" rel="noopener">https://xz.aliyun.com/t/7132#toc-5</a></p>
+<p><a href="https://blog.nowcoder.net/n/be73b8f592504ae8b1d00368433061be" target="_blank" rel="noopener">https://blog.nowcoder.net/n/be73b8f592504ae8b1d00368433061be</a></p>
+<h3 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h3><blockquote>
+<ol>
+<li>博主初衷为分享网络安全知识，请勿利用技术做出任何危害网络安全的行为，否则后果自负，与本人无关！</li>
+<li>部分学习内容来自网络，回馈网络，如涉及版权问题，请联系删除  orz </li>
+</ol>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="https://passenger-amao.github.io">AMao</a></p><p> <span>Link:  </span><a href="https://passenger-amao.github.io/2020/09/13/%E9%A2%84%E7%BC%96%E8%AF%91/">https://passenger-amao.github.io/2020/09/13/%E9%A2%84%E7%BC%96%E8%AF%91/</a></p><p> <span>Copyright:  </span><span>本站所有文章均采用 <a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际(CC BY-NC-SA 4.0)</a> 许可协议。转载请注明出处！</span></p></div><div class="post-paginator"><a class="nextSlogan" href="/2020/09/09/Docker%20%E9%80%83%E9%80%B8/" title="Docker 逃逸"><span>NextPost ></span><br><span class="nextTitle">Docker 逃逸</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo" target="_blank" rel="noopener"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#预编译过程"><span class="toc-number">1.</span> <span class="toc-text">预编译过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#预编译防止SQL注入的原理"><span class="toc-number">2.</span> <span class="toc-text">预编译防止SQL注入的原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#模拟预编译"><span class="toc-number">3.</span> <span class="toc-text">模拟预编译</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#预编译中的转义"><span class="toc-number">4.</span> <span class="toc-text">预编译中的转义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#预编译中的注入思路"><span class="toc-number">5.</span> <span class="toc-text">预编译中的注入思路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#声明"><span class="toc-number">7.</span> <span class="toc-text">声明</span></a></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i></body></html>
