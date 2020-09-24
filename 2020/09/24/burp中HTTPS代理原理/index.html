@@ -1,0 +1,192 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="AMao"><meta name="renderer" content="webkit"><meta name="copyright" content="AMao"><meta name="keywords" content="AMao's Blog"><meta name="description" content=""><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>burp中HTTPS代理原理分析 · AMao's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">AMao</div><div class="profile-signature">小菜鸡目前对一些东西的认知，希望师傅们可以帮忙纠正！</div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">AMao's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">burp中HTTPS代理原理分析</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2020-09-24</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="Web安全"> Web安全</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="HTTPS"> HTTPS</a><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="代理"> 代理</a></span></div><div class="post-intro-read"><span> Word count: <span class="post-count">819</span> | Reading time: <span class="post-count">2</span>min</span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><blockquote>
+<p>代理分为转发代理（Forwarding proxies）和TLS终止代理（TLS terminating proxies），</p>
+<ul>
+<li>转发代理只转发数据包，却看不到加密的有效内容</li>
+<li>TLS终止代理，代理程序会解开TLS数据包来查看有效载荷，burp采用的就是这种代理</li>
+</ul>
+</blockquote>
+<h3 id="HTTP代理"><a href="#HTTP代理" class="headerlink" title="HTTP代理"></a>HTTP代理</h3><ul>
+<li><p>正常HTTP流量包</p>
+<p><img src="https://pic.downk.cc/item/5f6c4ed1160a154a675aa463.jpg" alt=""></p>
+</li>
+<li><p>HTTP代理流量包</p>
+<p><img src="https://pic.downk.cc/item/5f6c4fe5160a154a675b2aef.jpg" alt=""></p>
+</li>
+</ul>
+<blockquote>
+<p>发送到代理的GET请求的第二个参数是完整的URI（或URL），代理程序据此发现目标端点，此格式被称为<code>absolute-form</code> </p>
+<p>当向代理程序发出请求时，除了 <code>CONNECT</code> 或服务器范围的 <code>OPTIONS</code> 请求之外，客户端<strong>必须</strong>以 <code>absolute-form</code> 的形式发送目标URI。</p>
+</blockquote>
+<p><img src="https://pic.downk.cc/item/5f6c5451160a154a675e4fb0.jpg" alt=""></p>
+<blockquote>
+<ul>
+<li>浏览器建立和代理之间的TCP连接</li>
+<li>浏览器将HTTP请求（使用<code>absolute-URI</code>）发送到代理</li>
+<li>代理建立与yahoo.com之间的TCP连接（使用<code>absolute-URI</code>）</li>
+<li>代理转发HTTP请求</li>
+<li>代理收到响应。</li>
+<li>代理关闭与yahoo.com的连接。</li>
+<li>代理将响应转发给浏览器。</li>
+<li>代理通知关闭连接（使用<code>FIN</code>）。</li>
+<li>浏览器和代理之间的连接关闭。</li>
+</ul>
+</blockquote>
+<ul>
+<li><p>HOST</p>
+<blockquote>
+<p>代理可以查看HOST请求头，为什么还需要使用 <code>absolute-UIR</code></p>
+<p>为了向后兼容 <code>HTTP/1.0</code> 代理，即使请求目标是<code>absolute-form</code>的，客户端也<strong>必须</strong>在<code>HTTP/1.1</code>请求中发送<code>Host</code>请求头字段，因为这样允许Host信息通过旧的<code>HTTP/1.0</code>代理进行转发</p>
+<p>新版代理依赖于<code>absolute-URI</code>并忽略<code>Host</code>请求头，如果<code>Host</code>请求头与<code>URI</code>不同，那么代理必须生成正确的<code>Header</code>并发送请求</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="HTTPS-转发代理"><a href="#HTTPS-转发代理" class="headerlink" title="HTTPS 转发代理"></a>HTTPS 转发代理</h3><ul>
+<li><p>CONNECT 请求</p>
+<blockquote>
+<p>在TLS握手之前，浏览器会将目标端点的域名随 <code>CONNECT</code> 请求发送至代理程序</p>
+</blockquote>
+<ul>
+<li><p>格式：包含目标主机和端口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CONNECT www.example.com:80 HTTP/1.1</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<blockquote>
+<p>CONNECT方法请求接收方建立一条连接至由请求目标标识的、目标原始服务器的隧道，如果成功，则将其行为限制在对两个方向上的分组数据的盲目转发，直到隧道关闭</p>
+</blockquote>
+</li>
+</ul>
+<p><img src="https://pic.downk.cc/item/5f6c5c6f160a154a67619acb.jpg" alt=""></p>
+<blockquote>
+<ul>
+<li><p>浏览器创建与转发代理的TCP连接</p>
+</li>
+<li><p>浏览器将<code>CONNECT google.com:443</code>请求发送给代理</p>
+</li>
+<li><p>代理尝试连接到<code>google.com:443</code></p>
+</li>
+<li><p>如果成功，代理返回响应<code>200 connection established</code></p>
+</li>
+<li><p>现在浏览器知道代理可以和目标端点建立连接并启动TLS握手</p>
+</li>
+<li><p>转发代理只是传递请求，直到一方关闭连接，然后关闭其他连接</p>
+<p>代理程序只进行转发，并不会解密报文</p>
+</li>
+</ul>
+</blockquote>
+<h3 id="TLS终止代理"><a href="#TLS终止代理" class="headerlink" title="TLS终止代理"></a>TLS终止代理</h3><blockquote>
+<p>Burp 中的HTTPS代理</p>
+<p>Burp 有自己的证书，BurpSuite需要在操作系统添加一个根证书，这个根证书可以让浏览器信任所有BurpSuite颁发的证书</p>
+<p>BurpSuite拥有了两套对称密钥，一套用于与client交互，另外一套与server交互，而在BurpSuite处可以获得https明文</p>
+</blockquote>
+<p><img src="https://pic.downk.cc/item/5f6c5892160a154a67602242.png" alt=""></p>
+<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><blockquote>
+<p><a href="https://parsiya.net/blog/2016-07-28-thick-client-proxying---part-6-how-https-proxies-work/" target="_blank" rel="noopener">原文地址</a></p>
+<p><a href="https://www.anquanke.com/post/id/86168" target="_blank" rel="noopener">由安全客作者 h4d35 翻译</a></p>
+</blockquote>
+<h3 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h3><blockquote>
+<ol>
+<li>博主初衷为分享网络安全知识，请勿利用技术做出任何危害网络安全的行为，否则后果自负，与本人无关！</li>
+<li>部分学习内容来自网络，回馈网络，如涉及版权问题，请联系删除  orz </li>
+</ol>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="https://passenger-amao.github.io">AMao</a></p><p> <span>Link:  </span><a href="https://passenger-amao.github.io/2020/09/24/burp%E4%B8%ADHTTPS%E4%BB%A3%E7%90%86%E5%8E%9F%E7%90%86/">https://passenger-amao.github.io/2020/09/24/burp%E4%B8%ADHTTPS%E4%BB%A3%E7%90%86%E5%8E%9F%E7%90%86/</a></p><p> <span>Copyright:  </span><span>本站所有文章均采用 <a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际(CC BY-NC-SA 4.0)</a> 许可协议。转载请注明出处！</span></p></div><div class="post-paginator"><a class="nextSlogan" href="/2020/09/24/Web%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E8%AF%A6%E8%A7%A3/" title="Web通信协议详解（HTTP、SSL、HTTPS、HSTS）"><span>NextPost ></span><br><span class="nextTitle">Web通信协议详解（HTTP、SSL、HTTPS、HSTS）</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo" target="_blank" rel="noopener"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#HTTP代理"><span class="toc-number">1.</span> <span class="toc-text">HTTP代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#HTTPS-转发代理"><span class="toc-number">2.</span> <span class="toc-text">HTTPS 转发代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TLS终止代理"><span class="toc-number">3.</span> <span class="toc-text">TLS终止代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#说明"><span class="toc-number">4.</span> <span class="toc-text">说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#声明"><span class="toc-number">5.</span> <span class="toc-text">声明</span></a></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i></body></html>
